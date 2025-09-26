@@ -38,6 +38,15 @@
 #include <boost/foreach.hpp>
 #include <boost/shared_ptr.hpp>
 
+// Compatibility for newer Boost versions
+namespace boost {
+namespace asio {
+#if BOOST_VERSION >= 107000
+    typedef io_context io_service;
+#endif
+}
+}
+
 #include <cstddef>
 #include <cstdlib>
 #ifdef __GXX_EXPERIMENTAL_CXX0X__

@@ -296,7 +296,7 @@ void Connection::deleteConnection()
 	assert(!m_refCount);
 	try
 	{
-		m_service.dispatch(boost::bind(&Connection::onStop, this));
+		boost::asio::dispatch(m_service, boost::bind(&Connection::onStop, this));
 	}
 	catch(std::exception& e)
 	{
@@ -544,7 +544,7 @@ uint32_t Connection::getIP() const
 	boost::system::error_code error;
 	const boost::asio::ip::tcp::endpoint ip = m_socket->remote_endpoint(error);
 	if(!error)
-		return htonl(ip.address().to_v4().to_ulong());
+		return htonl(ip.address().to_v4().to_uint());
 
 	PRINT_ASIO_ERROR("Getting remote ip");
 	return 0;

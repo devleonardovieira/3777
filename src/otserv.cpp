@@ -678,7 +678,7 @@ void otserv(StringVec, ServiceManager* services)
 				for(uint8_t** addr = (uint8_t**)host->h_addr_list; addr[0] != NULL; addr++)
 				{
 					uint32_t resolved = swap_uint32(*(uint32_t*)(*addr));
-					if(m_ip.to_v4().to_ulong() == resolved)
+					if(m_ip.to_v4().to_uint() == resolved)
 						continue;
 
 					ipList.push_back(boost::asio::ip::address_v4(resolved));
@@ -694,7 +694,7 @@ void otserv(StringVec, ServiceManager* services)
 		}
 
 		serverIps.push_front(std::make_pair(LOCALHOST, 0xFFFFFFFF));
-		if(m_ip.to_v4().to_ulong() != LOCALHOST)
+		if(m_ip.to_v4().to_uint() != LOCALHOST)
 			ipList.push_back(boost::asio::ip::address_v4(LOCALHOST));
 	}
 	else if(ipList.size() < 2)

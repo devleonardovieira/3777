@@ -2536,7 +2536,7 @@ void Player::notifyLogIn(Player* loginPlayer)
 	if(!client)
 		return;
 
-	VIPSet::iterator it = VIPList.find(loginPlayer->getGUID());
+	std::set<uint32_t>::iterator it = VIPList.find(loginPlayer->getGUID());
 	if(it != VIPList.end())
 		client->sendVIPLogIn(loginPlayer->getGUID());
 }
@@ -2546,7 +2546,7 @@ void Player::notifyLogOut(Player* logoutPlayer)
 	if(!client)
 		return;
 
-	VIPSet::iterator it = VIPList.find(logoutPlayer->getGUID());
+	std::set<uint32_t>::iterator it = VIPList.find(logoutPlayer->getGUID());
 	if(it != VIPList.end())
 		client->sendVIPLogOut(logoutPlayer->getGUID());
 }
@@ -5322,4 +5322,181 @@ void Player::sendCritical() const
 {
 	if(g_config.getBool(ConfigManager::DISPLAY_CRITICAL_HIT))
 		g_game.addAnimatedText(getPosition(), COLOR_DARKRED, "CRITICAL!");
+}
+
+// Stash system implementation
+bool Player::addItemToStash(uint16_t itemId, uint32_t count)
+{
+	if(!canAddItemToStash(itemId))
+		return false;
+	
+	if(count == 0)
+		return false;
+
+	const ItemType& it = Item::items[itemId];
+	if(!it.id)
+		return false;
+	
+	// Check if item is stackable
+	if(!it.stackable && count > 1)
+		return false;
+	
+	// Add to stash
+	StashItemList::iterator iter = stashItems.find(itemId);
+	if(iter != stashItems.end())
+	{
+		// Check for overflow
+		if(iter->second > UINT32_MAX - count)
+			return false;
+		iter->second += count;
+	}
+	else
+		stashItems[itemId] = count;
+	
+	return true;
+}
+
+bool Player::removeItemFromStash(uint16_t itemId, uint32_t count)
+{
+	if(count == 0)
+		return false;
+
+	StashItemList::iterator iter = stashItems.find(itemId);
+	if(iter == stashItems.end() || iter->second < count)
+		return false;
+
+	iter->second -= count;
+	if(iter->second == 0)
+		stashItems.erase(iter);
+
+	return true;
+}
+
+uint32_t Player::getStashItemCount(uint16_t itemId) const
+{
+	StashItemList::const_iterator iter = stashItems.find(itemId);
+	if(iter != stashItems.end())
+		return iter->second;
+
+	return 0;
+}
+
+bool Player::canAddItemToStash(uint16_t itemId) const
+{
+	const ItemType& it = Item::items[itemId];
+	if(!it.id)
+		return false;
+
+	// Security validations as per documentation
+	// Check if item is allowed in stash (exclude containers, keys, etc.)
+	if(it.type == ITEM_TYPE_CONTAINER)
+		return false;
+	
+	if(it.isKey())
+		return false;
+	
+	// Exclude deprecated items
+	if(it.group == ITEM_GROUP_DEPRECATED)
+		return false;
+
+	// Additional security validations
+	// Note: Quest items and unique items validation would need to be implemented
+	// based on specific server requirements and available ItemType properties
+
+	// Exclude items that cannot be moved
+	if(!it.moveable)
+		return false;
+
+	// Exclude items with special properties that shouldn't be stashed
+	if(it.type == ITEM_TYPE_TELEPORT || it.type == ITEM_TYPE_MAGICFIELD || it.type == ITEM_TYPE_DOOR)
+		return false;
+
+	return true;
+}
+
+bool Player::transferItemToStash(uint16_t itemId, uint32_t count)
+{
+	if(!canAddItemToStash(itemId) || count == 0)
+		return false;
+	
+	// Check if player has the item in inventory
+	uint32_t availableCount = __getItemTypeCount(itemId);
+	if(availableCount < count)
+		return false;
+	
+	// Remove items from player inventory
+	if(!g_game.removeItemOfType(this, itemId, count, -1, false))
+		return false;
+	
+	// Add to stash
+	if(!addItemToStash(itemId, count))
+	{
+		// Try to restore items if stash addition failed
+		Item* item = Item::CreateItem(itemId, count);
+		if(item)
+		{
+			if(g_game.internalPlayerAddItem(NULL, this, item) != RET_NOERROR)
+			{
+				// If we can't restore to inventory, try depot
+				if(Depot* depot = getDepot(getTown(), true))
+				{
+					depot->__internalAddThing(item);
+				}
+				else
+				{
+					delete item;
+				}
+			}
+		}
+		return false;
+	}
+	
+	return true;
+}
+
+bool Player::transferItemFromStash(uint16_t itemId, uint32_t count)
+{
+	if(count == 0)
+		return false;
+	
+	// Check if player has the item in stash
+	uint32_t stashCount = getStashItemCount(itemId);
+	if(stashCount < count)
+		return false;
+	
+	// Remove from stash first
+	if(!removeItemFromStash(itemId, count))
+		return false;
+	
+	// Create item and add to depot
+	Item* item = Item::CreateItem(itemId, count);
+	if(!item)
+	{
+		// Restore to stash if item creation failed
+		addItemToStash(itemId, count);
+		return false;
+	}
+	
+	// Get player's depot
+	Depot* depot = getDepot(getTown(), true);
+	if(!depot)
+	{
+		// Restore to stash if depot not found
+		addItemToStash(itemId, count);
+		delete item;
+		return false;
+	}
+	
+	// Add to depot
+	ReturnValue ret = depot->__queryAdd(INDEX_WHEREEVER, item, count, FLAG_NOLIMIT);
+	if(ret != RET_NOERROR)
+	{
+		// Restore to stash if depot addition failed
+		addItemToStash(itemId, count);
+		delete item;
+		return false;
+	}
+	
+	depot->__internalAddThing(item);
+	return true;
 }

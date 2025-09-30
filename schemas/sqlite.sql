@@ -297,6 +297,14 @@ CREATE TABLE "player_storage" (
 	FOREIGN KEY ("player_id") REFERENCES "players" ("id")
 );
 
+CREATE TABLE "player_stash" (
+	"player_id" INTEGER NOT NULL,
+	"item_id" INTEGER NOT NULL,
+	"count" INTEGER NOT NULL DEFAULT 0,
+	UNIQUE ("player_id", "item_id"),
+	FOREIGN KEY ("player_id") REFERENCES "players" ("id")
+);
+
 CREATE TABLE "player_viplist" (
 	"player_id" INTEGER NOT NULL,
 	"vip_id" INTEGER NOT NULL,

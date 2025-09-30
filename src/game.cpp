@@ -15,6 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ////////////////////////////////////////////////////////////////////////
 #include "otpch.h"
+#include <algorithm>
+#include <random>
 #include "game.h"
 
 #include "configmanager.h"
@@ -889,6 +891,216 @@ bool Game::internalPlaceCreature(Creature* creature, const Position& pos, bool e
 
 	autoList[creature->getID()] = creature;
 	creature->addList();
+	return true;
+}
+
+bool Game::playerStashStow(uint32_t playerId, const Position& pos, uint16_t itemId, uint8_t stackpos, uint32_t count, uint8_t action)
+{
+	Player* player = getPlayerByID(playerId);
+	if(!player || player->isRemoved())
+		return false;
+
+	// Security validations
+	// Check if player is in a valid state
+	if(player->isGhost() && !player->getAccess())
+	{
+		player->sendTextMessage(MSG_STATUS_SMALL, "You cannot use stash while in ghost mode.");
+		return false;
+	}
+
+	// Check if player has stash access (could be level-based or premium-based)
+	if(player->getLevel() < 1)
+	{
+		player->sendTextMessage(MSG_STATUS_SMALL, "You need to be at least level 1 to use stash.");
+		return false;
+	}
+
+	// Validate action parameter
+	if(action > STASH_ACTION_STOW_STACK)
+	{
+		player->sendTextMessage(MSG_STATUS_SMALL, "Invalid stash action.");
+		return false;
+	}
+
+	// Validate count parameter
+	if(count == 0 || count > 100000)
+	{
+		player->sendTextMessage(MSG_STATUS_SMALL, "Invalid item count.");
+		return false;
+	}
+
+	Thing* thing = NULL;
+	Item* item = NULL;
+
+	// Para ações de stow, precisamos encontrar o item na posição especificada
+	if(pos.x != 0 || pos.y != 0 || pos.z != 0)
+	{
+		Tile* tile = getTile(pos.x, pos.y, pos.z);
+		if(!tile)
+		{
+			player->sendTextMessage(MSG_STATUS_SMALL, "Item not found.");
+			return false;
+		}
+
+		thing = tile->__getThing(stackpos);
+		if(!thing)
+		{
+			player->sendTextMessage(MSG_STATUS_SMALL, "Item not found.");
+			return false;
+		}
+
+		item = thing->getItem();
+		if(!item || item->getID() != itemId)
+		{
+			player->sendTextMessage(MSG_STATUS_SMALL, "Item not found.");
+			return false;
+		}
+
+		// Validate distance when item is on ground
+		if(!Position::areInRange<1, 1, 0>(player->getPosition(), pos))
+		{
+			player->sendTextMessage(MSG_STATUS_SMALL, "You are too far away from the item.");
+			return false;
+		}
+	}
+	else
+	{
+		// Se não há posição, procurar no inventário do jogador
+		item = player->getInventoryItem(static_cast<slots_t>(stackpos));
+		if(!item || item->getID() != itemId)
+		{
+			player->sendTextMessage(MSG_STATUS_SMALL, "Item not found in inventory.");
+			return false;
+		}
+	}
+
+	// Verificar se o item pode ser adicionado ao stash
+	if(!player->canAddItemToStash(itemId))
+	{
+		player->sendTextMessage(MSG_STATUS_SMALL, "This item cannot be stored in stash.");
+		return false;
+	}
+
+	uint32_t itemCount = item->getItemCount();
+	
+	switch(action)
+	{
+		case STASH_ACTION_STOW_ITEM:
+		{
+			// Guardar quantidade específica ou toda se count for 0
+			if(count == 0 || count > itemCount)
+				count = itemCount;
+
+			// Adicionar ao stash
+			if(!player->addItemToStash(itemId, count))
+			{
+				player->sendTextMessage(MSG_STATUS_SMALL, "Failed to add item to stash.");
+				return false;
+			}
+
+			// Remover do mundo/inventário
+			if(count == itemCount)
+			{
+				// Remover item completamente
+				ReturnValue ret = internalRemoveItem(NULL, item, count);
+				if(ret != RET_NOERROR)
+				{
+					// Reverter adição ao stash
+					player->removeItemFromStash(itemId, count);
+					player->sendTextMessage(MSG_STATUS_SMALL, "Failed to remove item.");
+					return false;
+				}
+			}
+			else
+			{
+				// Reduzir quantidade do item
+				internalRemoveItem(NULL, item, count);
+			}
+
+			// Enviar atualização do stash para o cliente
+			if(player->client) player->client->sendStashItems();
+			
+			std::stringstream ss;
+			ss << "You have stored " << count << "x " << item->getName() << " in your stash.";
+			player->sendTextMessage(MSG_INFO_DESCR, ss.str());
+			break;
+		}
+
+		case STASH_ACTION_STOW_CONTAINER:
+		{
+			// Para contêineres, guardar todos os itens válidos
+			Container* container = item->getContainer();
+			if(!container)
+			{
+				player->sendTextMessage(MSG_STATUS_SMALL, "This is not a container.");
+				return false;
+			}
+
+			uint32_t storedItems = 0;
+			for(ItemList::const_iterator it = container->getItems(); it != container->getEnd(); ++it)
+			{
+				Item* containerItem = *it;
+				if(player->canAddItemToStash(containerItem->getID()))
+				{
+					uint32_t containerItemCount = containerItem->getItemCount();
+					if(player->addItemToStash(containerItem->getID(), containerItemCount))
+					{
+						storedItems += containerItemCount;
+						internalRemoveItem(NULL, containerItem, containerItemCount);
+					}
+				}
+			}
+
+			if(storedItems > 0)
+			{
+				// Enviar atualização do stash para o cliente
+				if(player->client) player->client->sendStashItems();
+				
+				std::stringstream ss;
+				ss << "You have stored " << storedItems << " items from the container in your stash.";
+				player->sendTextMessage(MSG_INFO_DESCR, ss.str());
+			}
+			else
+			{
+				player->sendTextMessage(MSG_STATUS_SMALL, "No items could be stored from this container.");
+				return false;
+			}
+			break;
+		}
+
+		case STASH_ACTION_STOW_STACK:
+		{
+			// Guardar toda a pilha do item
+			if(!player->addItemToStash(itemId, itemCount))
+			{
+				player->sendTextMessage(MSG_STATUS_SMALL, "Failed to add item stack to stash.");
+				return false;
+			}
+
+			// Remover toda a pilha
+			ReturnValue ret = internalRemoveItem(NULL, item, itemCount);
+			if(ret != RET_NOERROR)
+			{
+				// Reverter adição ao stash
+				player->removeItemFromStash(itemId, itemCount);
+				player->sendTextMessage(MSG_STATUS_SMALL, "Failed to remove item stack.");
+				return false;
+			}
+
+			// Enviar atualização do stash para o cliente
+			if(player->client) player->client->sendStashItems();
+			
+			std::stringstream ss;
+			ss << "You have stored " << itemCount << "x " << item->getName() << " stack in your stash.";
+			player->sendTextMessage(MSG_INFO_DESCR, ss.str());
+			break;
+		}
+
+		default:
+			player->sendTextMessage(MSG_STATUS_SMALL, "Invalid stash action.");
+			return false;
+	}
+
 	return true;
 }
 
@@ -6414,4 +6626,114 @@ void Game::playerExtendedOpcode(uint32_t playerId, uint8_t opcode, const std::st
 	CreatureEventList extendedOpcodeEvents = player->getCreatureEvents(CREATURE_EVENT_EXTENDED_OPCODE);
 	for(CreatureEventList::iterator it = extendedOpcodeEvents.begin(); it != extendedOpcodeEvents.end(); ++it)
 		(*it)->executeExtendedOpcode(player, opcode, buffer);
+}
+
+bool Game::playerStashWithdraw(uint32_t playerId, const Position& pos, uint16_t clientId, uint8_t stackpos, uint32_t count, uint8_t action)
+{
+	Player* player = getPlayerByID(playerId);
+	if(!player || player->isRemoved())
+		return false;
+
+	// Security validations
+	// Check if player is in a valid state
+	if(player->isGhost() && !player->getAccess())
+	{
+		player->sendTextMessage(MSG_STATUS_SMALL, "You cannot use stash while in ghost mode.");
+		return false;
+	}
+
+	// Check if player has stash access
+	if(player->getLevel() < 1)
+	{
+		player->sendTextMessage(MSG_STATUS_SMALL, "You need to be at least level 1 to use stash.");
+		return false;
+	}
+
+	// Convert clientId back to itemId
+	const ItemType& it = Item::items.getItemIdByClientId(clientId);
+	if(!it.id)
+	{
+		player->sendTextMessage(MSG_STATUS_SMALL, "Invalid item ID.");
+		return false;
+	}
+
+	// Validate count parameter
+	if(count == 0 || count > 100000)
+	{
+		player->sendTextMessage(MSG_STATUS_SMALL, "Invalid item count.");
+		return false;
+	}
+
+	// Verificar se o item existe no stash
+	uint32_t stashCount = player->getStashItemCount(it.id);
+	if(stashCount == 0)
+	{
+		player->sendTextMessage(MSG_STATUS_SMALL, "You don't have this item in your stash.");
+		return false;
+	}
+
+	// Verificar se a quantidade solicitada é válida
+	if(count == 0 || count > stashCount)
+		count = stashCount;
+
+	uint32_t totalWithdrawn = 0;
+	uint32_t remainingCount = count;
+	
+	// Criar múltiplos stacks se necessário (limite de 100 por stack)
+	while(remainingCount > 0)
+	{
+		uint32_t currentStackCount = std::min(remainingCount, (uint32_t)100);
+		
+		// Criar o item para retirar
+		Item* item = Item::CreateItem(it.id, currentStackCount);
+		if(!item)
+		{
+			player->sendTextMessage(MSG_STATUS_SMALL, "This item cannot be created.");
+			// Se já retirou alguns itens, precisa restaurar no stash
+			if(totalWithdrawn > 0)
+				player->addItemToStash(it.id, totalWithdrawn);
+			return false;
+		}
+
+		// Tentar adicionar o item ao inventário do jogador
+		ReturnValue ret = internalAddItem(NULL, player, item, INDEX_WHEREEVER, 0, false);
+		if(ret != RET_NOERROR)
+		{
+			// Se não conseguir adicionar, tentar no chão
+			Tile* tile = player->getTile();
+			if(tile)
+			{
+				ret = internalAddItem(NULL, tile, item, INDEX_WHEREEVER, FLAG_NOLIMIT, false);
+			}
+			
+			if(ret != RET_NOERROR)
+			{
+				// Se não conseguiu adicionar em lugar nenhum, deletar o item
+				delete item;
+				
+				// Se já retirou alguns itens, precisa restaurar no stash
+				if(totalWithdrawn > 0)
+					player->addItemToStash(it.id, totalWithdrawn);
+				
+				player->sendTextMessage(MSG_STATUS_SMALL, "There is not enough room.");
+				return false;
+			}
+		}
+		
+		// Sucesso - atualizar contadores
+		totalWithdrawn += currentStackCount;
+		remainingCount -= currentStackCount;
+	}
+
+	// Remover do stash a quantidade total retirada
+	player->removeItemFromStash(it.id, totalWithdrawn);
+	
+	// Enviar atualização do stash para o cliente
+	if(player->client) player->client->sendStashItems();
+	
+	std::stringstream ss;
+	ss << "You have withdrawn " << totalWithdrawn << "x " << Item::items[it.id].name << " from your stash.";
+	player->sendTextMessage(MSG_INFO_DESCR, ss.str());
+	
+	return true;
 }

@@ -397,6 +397,15 @@ class LuaInterface
 		static int32_t luaDoPlayerAddSoul(lua_State* L);
 		static int32_t luaDoPlayerSetStamina(lua_State* L);
 		static int32_t luaDoPlayerAddExperience(lua_State* L);
+
+		// Stash system functions
+		static int32_t luaDoPlayerOpenStash(lua_State* L);
+		static int32_t luaDoPlayerAddItemToStash(lua_State* L);
+		static int32_t luaDoPlayerRemoveItemFromStash(lua_State* L);
+		static int32_t luaGetPlayerStashItemCount(lua_State* L);
+		static int32_t luaDoPlayerClearStash(lua_State* L);
+		static int32_t luaDoPlayerTransferItemToStash(lua_State* L);
+		static int32_t luaDoPlayerTransferItemFromStash(lua_State* L);
 		static int32_t luaDoPlayerSetGuildId(lua_State* L);
 		static int32_t luaDoPlayerSetGuildLevel(lua_State* L);
 		static int32_t luaDoPlayerSetGuildNick(lua_State* L);

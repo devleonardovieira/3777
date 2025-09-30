@@ -88,6 +88,11 @@ class ProtocolGame : public Protocol
 		void publicSendCreatePrivateChannel(uint16_t channelId, const std::string& channelName) { //lastAdded
 			sendCreatePrivateChannel(channelId, channelName);
 		}
+		
+		// Stash send functions (public)
+		void sendOpenStash();
+		void sendStashItems();
+		void sendStashItemsByCategory(StashCategory_t category);
 
 	private:
 		void disconnectClient(uint8_t error, const char* message);
@@ -181,6 +186,10 @@ class ProtocolGame : public Protocol
 		void parseProcessRuleViolation(NetworkMessage& msg);
 		void parseCloseRuleViolation(NetworkMessage& msg);
 		void parseCancelRuleViolation(NetworkMessage& msg);
+
+		// Stash functions
+		void parseStashWithdraw(NetworkMessage& msg);
+		void parseStashFilter(NetworkMessage& msg);
 
 		//Send functions
 		void sendChannelMessage(std::string author, std::string text, SpeakClasses type, uint8_t channel);

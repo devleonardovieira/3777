@@ -356,6 +356,9 @@
 	<action itemid="8981" event="script" value="other/dolls.lua"/>
 	<action itemid="8982" event="script" value="other/dolls.lua"/>
 
+	<!-- Stash System -->
+	<action actionid="7777" event="script" value="stash_system.lua"/>
+
 	<!-- Other -->
 	<action itemid="2566" event="script" value="other/pumpkinhead.lua"/>
 	<action itemid="2096" event="script" value="other/pumpkinhead.lua"/>

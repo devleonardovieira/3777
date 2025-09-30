@@ -152,6 +152,8 @@ class ItemType
 			runeLevel, runeMagLevel, lightLevel, lightColor, decayTo, rotateTo, alwaysOnTopOrder;
 		uint32_t shootRange, charges, decayTime, attackSpeed, wieldInfo, minReqLevel, minReqMagicLevel,
 			worth, levelDoor;
+		
+		uint8_t stashCategory; // Stash category for item organization
 
 		std::string name, pluralName, article, description, runeSpellName, vocationString;
 

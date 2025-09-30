@@ -42,6 +42,7 @@
 #include "chat.h"
 #include "configmanager.h"
 #include "game.h"
+#include "stash_category_manager.h"
 
 extern Game g_game;
 extern ConfigManager g_config;
@@ -680,8 +681,28 @@ void ProtocolGame::parsePacket(NetworkMessage &msg)
 				parseReceivePing(msg);
 				break;
 
+			case 0x28: // stash withdraw
+				parseStashWithdraw(msg);
+				break;
+
+			case 0x29: // open stash
+				sendOpenStash();
+				break;
+
+			case 0x2D: // stash withdraw/remove item
+				parseStashWithdraw(msg);
+				break;
+
+			case 0x2E: // stash filter
+				parseStashFilter(msg);
+				break;
+
 			case 0x32: // otclient extended opcode
 				parseExtendedOpcode(msg);
+				break;
+
+			case 0x3A: // stash withdraw (additional opcode)
+				parseStashWithdraw(msg);
 				break;
 
 			case 0x64: // move with steps
@@ -3285,6 +3306,164 @@ void ProtocolGame::AddShopItem(NetworkMessage_ptr msg, const ShopInfo& item)
 	msg->put<uint32_t>(item.buyPrice);
 	msg->put<uint32_t>(item.sellPrice);
 }
+
+void ProtocolGame::parseStashWithdraw(NetworkMessage& msg)
+{
+	uint8_t action = msg.get<uint8_t>();
+	
+	switch(action) {
+		case STASH_ACTION_STOW_ITEM: {
+			Position pos = msg.getPosition();
+			uint16_t spriteId = msg.get<uint16_t>();
+			uint8_t stackpos = msg.get<uint8_t>();
+			uint32_t count = msg.get<uint32_t>();
+			addGameTask(&Game::playerStashStow, player->getID(), pos, spriteId, stackpos, count, action);
+			break;
+		}
+		
+		case STASH_ACTION_STOW_CONTAINER: {
+			Position pos = msg.getPosition();
+			uint16_t spriteId = msg.get<uint16_t>();
+			uint8_t stackpos = msg.get<uint8_t>();
+			addGameTask(&Game::playerStashStow, player->getID(), pos, spriteId, stackpos, 0, action);
+			break;
+		}
+		
+		case STASH_ACTION_STOW_STACK: {
+			Position pos = msg.getPosition();
+			uint16_t spriteId = msg.get<uint16_t>();
+			uint8_t stackpos = msg.get<uint8_t>();
+			addGameTask(&Game::playerStashStow, player->getID(), pos, spriteId, stackpos, 0, action);
+			break;
+		}
+		
+		case STASH_ACTION_WITHDRAW: {
+			uint16_t spriteId = msg.get<uint16_t>();
+			uint32_t count = msg.get<uint32_t>();
+			uint8_t stackpos = msg.get<uint8_t>();
+			addGameTask(&Game::playerStashWithdraw, player->getID(), Position(), spriteId, stackpos, count, action);
+			break;
+		}
+		
+		default:
+		break;
+	}
+}
+
+void ProtocolGame::parseStashFilter(NetworkMessage& msg)
+{
+	uint8_t categoryId = msg.get<uint8_t>();
+	
+	// Validar categoria usando StashCategoryManager
+	StashCategoryManager& categoryManager = StashCategoryManager::getInstance();
+	if (!categoryManager.isValidCategory(static_cast<StashCategory_t>(categoryId))) {
+		return;
+	}
+	
+	// Enviar itens filtrados por categoria
+	sendStashItemsByCategory(static_cast<StashCategory_t>(categoryId));
+}
+
+void ProtocolGame::sendOpenStash()
+{
+	NetworkMessage_ptr msg = getOutputBuffer();
+	if(msg) {
+		TRACK_MESSAGE(msg);
+		msg->put<char>(41); // GameServerSupplyStash = 41
+		
+		// Send stash items
+		const StashItemList& stashItems = player->getStashItems();
+		msg->put<uint16_t>(stashItems.size());
+		
+		StashCategoryManager& categoryManager = StashCategoryManager::getInstance();
+		
+		for(const auto& stashItem : stashItems) {
+			// Get the ItemType to access clientId
+			const ItemType& itemType = Item::items[stashItem.first];
+			msg->put<uint16_t>(itemType.clientId); // client id (sprite id)
+			msg->put<uint32_t>(stashItem.second); // count
+			
+			// Send category information
+			StashCategory_t category = categoryManager.getItemCategory(stashItem.first);
+			msg->put<uint8_t>(static_cast<uint8_t>(category)); // category id
+		}
+		
+		// Add freeSlots field for protocol versions < 1410
+		if (player->getClientVersion() < 1410) {
+			msg->put<uint16_t>(0); // freeSlots - not used in this implementation
+		}
+	}
+}
+
+void ProtocolGame::sendStashItems()
+{
+	NetworkMessage_ptr msg = getOutputBuffer();
+	if(msg) {
+		TRACK_MESSAGE(msg);
+		msg->put<char>(41); // GameServerSupplyStash = 41
+		
+		const StashItemList& stashItems = player->getStashItems();
+		msg->put<uint16_t>(stashItems.size());
+		
+		StashCategoryManager& categoryManager = StashCategoryManager::getInstance();
+		
+		for(const auto& stashItem : stashItems) {
+			// Get the ItemType to access clientId
+			const ItemType& itemType = Item::items[stashItem.first];
+			msg->put<uint16_t>(itemType.clientId); // client id (sprite id)
+			msg->put<uint32_t>(stashItem.second); // count
+			
+			// Send category information
+			StashCategory_t category = categoryManager.getItemCategory(stashItem.first);
+			msg->put<uint8_t>(static_cast<uint8_t>(category)); // category id
+		}
+	}
+}
+
+void ProtocolGame::sendStashItemsByCategory(StashCategory_t category)
+{
+	NetworkMessage_ptr msg = getOutputBuffer();
+	if(msg) {
+		TRACK_MESSAGE(msg);
+		msg->put<char>(41); // GameServerSupplyStash = 41
+		
+		const StashItemList& stashItems = player->getStashItems();
+		StashCategoryManager& categoryManager = StashCategoryManager::getInstance();
+		
+		// Filter items by category
+		std::vector<std::pair<uint16_t, uint32_t>> filteredItems;
+		
+		if(category == STASH_CATEGORY_SHOW_ALL) {
+			// Show all items
+			for(const auto& stashItem : stashItems) {
+				filteredItems.push_back(stashItem);
+			}
+		} else {
+			// Filter by specific category
+			for(const auto& stashItem : stashItems) {
+				StashCategory_t itemCategory = categoryManager.getItemCategory(stashItem.first);
+				if(itemCategory == category) {
+					filteredItems.push_back(stashItem);
+				}
+			}
+		}
+		
+		msg->put<uint16_t>(filteredItems.size());
+		
+		for(const auto& stashItem : filteredItems) {
+			// Get the ItemType to access clientId
+			const ItemType& itemType = Item::items[stashItem.first];
+			msg->put<uint16_t>(itemType.clientId); // client id (sprite id)
+			msg->put<uint32_t>(stashItem.second); // count
+			
+			// Send category information
+			StashCategory_t itemCategory = categoryManager.getItemCategory(stashItem.first);
+			msg->put<uint8_t>(static_cast<uint8_t>(itemCategory)); // category id
+		}
+	}
+}
+
+
 
 void ProtocolGame::parseExtendedOpcode(NetworkMessage& msg)
 {

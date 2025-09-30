@@ -64,6 +64,7 @@
 #include "group.h"
 
 #include "monsters.h"
+#include "stash_category_manager.h"
 #ifdef __OTSERV_ALLOCATOR__
 #include "allocator.h"
 #endif
@@ -568,6 +569,10 @@ void otserv(StringVec, ServiceManager* services)
 	std::clog << ">> Loading outfits" << std::endl;
 	if(!Outfits::getInstance()->loadFromXml())
 		startupErrorMessage("Unable to load outfits!");
+
+	std::clog << ">> Loading stash categories" << std::endl;
+	if(!StashCategoryManager::getInstance().loadFromItemTypes())
+		startupErrorMessage("Unable to load stash categories!");
 
 	std::clog << ">> Loading chat channels" << std::endl;
 	if(!g_chat.loadFromXml())

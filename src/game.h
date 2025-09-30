@@ -517,6 +517,10 @@ class Game
 		bool playerLeaveParty(uint32_t playerId, bool forced = false);
 		bool playerSharePartyExperience(uint32_t playerId, bool activate, uint8_t unknown);
 		void playerExtendedOpcode(uint32_t playerId, uint8_t opcode, const std::string& buffer);
+		
+		// Stash functions - TEMPORARILY DISABLED FOR DEBUGGING
+		bool playerStashWithdraw(uint32_t playerId, const Position& pos, uint16_t clientId, uint8_t stackpos, uint32_t count, uint8_t action);
+		bool playerStashStow(uint32_t playerId, const Position& pos, uint16_t itemId, uint8_t stackpos, uint32_t count, uint8_t action);
 
 		void kickPlayer(uint32_t playerId, bool displayEffect);
 		bool broadcastMessage(const std::string& text, MessageClasses type);

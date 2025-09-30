@@ -159,6 +159,7 @@ typedef std::list<std::string> LearnedInstantSpellList;
 typedef std::list<uint32_t> InvitedToGuildsList;
 typedef std::list<Party*> PartyList;
 typedef std::map<uint32_t, War_t> WarMap;
+typedef std::map<uint16_t, uint32_t> StashItemList;
 
 #define SPEED_MAX 1500
 #define SPEED_MIN 10
@@ -982,6 +983,8 @@ class Player : public Creature, public Cylinder
 			{if(client) client->sendOpenPrivateChannel(receiver);}
 		void sendOutfitWindow()
 			{if(client) client->sendOutfitWindow();}
+		void sendOpenStash()
+			{if(client) client->sendOpenStash();}
 		void sendCloseContainer(uint32_t cid)
 			{if(client) {client->sendCloseContainer(cid);
 				for(AutoList<ProtocolGame>::const_iterator it = cSpectators.begin(); it != cSpectators.end(); ++it) if(it->second->getPlayer() == this)
@@ -1032,11 +1035,26 @@ class Player : public Creature, public Cylinder
 		void unlearnInstantSpell(const std::string& name);
 		bool hasLearnedInstantSpell(const std::string& name) const;
 
+		// Stash system methods
+		bool addItemToStash(uint16_t itemId, uint32_t count);
+		bool removeItemFromStash(uint16_t itemId, uint32_t count);
+		uint32_t getStashItemCount(uint16_t itemId) const;
+		const StashItemList& getStashItems() const { return stashItems; }
+		bool canAddItemToStash(uint16_t itemId) const;
+		void clearStash() { stashItems.clear(); }
+		
+		// Stash transfer methods
+		bool transferItemToStash(uint16_t itemId, uint32_t count);
+		bool transferItemFromStash(uint16_t itemId, uint32_t count);
+
 		VIPSet VIPList;
 		ContainerVector containerVec;
 		InvitedToGuildsList invitedToGuildsList;
 		ConditionList storedConditionList;
 		DepotMap depots;
+
+		// Stash system
+		StashItemList stashItems;
 
 		uint32_t marriage;
 		uint64_t balance;

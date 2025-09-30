@@ -1724,6 +1724,27 @@ void LuaInterface::registerFunctions()
 	//doPlayerAddSoul(cid, soul)
 	lua_register(m_luaState, "doPlayerAddSoul", LuaInterface::luaDoPlayerAddSoul);
 
+	//doPlayerAddItemToStash(cid, itemid, count)
+	lua_register(m_luaState, "doPlayerAddItemToStash", LuaInterface::luaDoPlayerAddItemToStash);
+
+	//doPlayerRemoveItemFromStash(cid, itemid, count)
+	lua_register(m_luaState, "doPlayerRemoveItemFromStash", LuaInterface::luaDoPlayerRemoveItemFromStash);
+
+	//getPlayerStashItemCount(cid, itemid)
+	lua_register(m_luaState, "getPlayerStashItemCount", LuaInterface::luaGetPlayerStashItemCount);
+
+	//doPlayerClearStash(cid)
+	lua_register(m_luaState, "doPlayerClearStash", LuaInterface::luaDoPlayerClearStash);
+
+	//doPlayerTransferItemToStash(cid, itemid, count)
+	lua_register(m_luaState, "doPlayerTransferItemToStash", LuaInterface::luaDoPlayerTransferItemToStash);
+
+	//doPlayerTransferItemFromStash(cid, itemid, count)
+	lua_register(m_luaState, "doPlayerTransferItemFromStash", LuaInterface::luaDoPlayerTransferItemFromStash);
+
+	//doPlayerOpenStash(cid)
+	lua_register(m_luaState, "doPlayerOpenStash", LuaInterface::luaDoPlayerOpenStash);
+
 	//doPlayerAddItem(cid, itemid[, count/subtype = 1[, canDropOnMap = true[, slot = 0]]])
 	//doPlayerAddItem(cid, itemid[, count = 1[, canDropOnMap = true[, subtype = 1[, slot = 0]]]])
 	//Returns uid of the created item
@@ -10879,6 +10900,152 @@ MULTI_OPERATOR(uint32_t, UOr, |=)
 MULTI_OPERATOR(uint32_t, UXor, ^=)
 
 #undef MULTI_OPERATOR
+
+// Stash system implementation
+int32_t LuaInterface::luaDoPlayerOpenStash(lua_State* L)
+{
+	//doPlayerOpenStash(cid)
+	uint32_t cid = popNumber(L);
+
+	ScriptEnviroment* env = getEnv();
+	Player* player = env->getPlayerByUID(cid);
+	if(!player)
+	{
+		errorEx(getError(LUA_ERROR_PLAYER_NOT_FOUND));
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	if(!player->isUsingOtclient())
+	{
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	// Use proper stash protocol function
+	if(player->client)
+		player->sendOpenStash();
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+int32_t LuaInterface::luaDoPlayerAddItemToStash(lua_State* L)
+{
+	//doPlayerAddItemToStash(cid, itemid, count)
+	uint32_t count = popNumber(L);
+	uint16_t itemId = popNumber(L);
+	uint32_t cid = popNumber(L);
+
+	ScriptEnviroment* env = getEnv();
+	Player* player = env->getPlayerByUID(cid);
+	if(!player)
+	{
+		errorEx(getError(LUA_ERROR_PLAYER_NOT_FOUND));
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	lua_pushboolean(L, player->addItemToStash(itemId, count));
+	return 1;
+}
+
+int32_t LuaInterface::luaDoPlayerRemoveItemFromStash(lua_State* L)
+{
+	//doPlayerRemoveItemFromStash(cid, itemid, count)
+	uint32_t count = popNumber(L);
+	uint16_t itemId = popNumber(L);
+	uint32_t cid = popNumber(L);
+
+	ScriptEnviroment* env = getEnv();
+	Player* player = env->getPlayerByUID(cid);
+	if(!player)
+	{
+		errorEx(getError(LUA_ERROR_PLAYER_NOT_FOUND));
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	lua_pushboolean(L, player->removeItemFromStash(itemId, count));
+	return 1;
+}
+
+int32_t LuaInterface::luaGetPlayerStashItemCount(lua_State* L)
+{
+	//getPlayerStashItemCount(cid, itemid)
+	uint16_t itemId = popNumber(L);
+	uint32_t cid = popNumber(L);
+
+	ScriptEnviroment* env = getEnv();
+	Player* player = env->getPlayerByUID(cid);
+	if(!player)
+	{
+		errorEx(getError(LUA_ERROR_PLAYER_NOT_FOUND));
+		lua_pushnumber(L, 0);
+		return 1;
+	}
+
+	lua_pushnumber(L, player->getStashItemCount(itemId));
+	return 1;
+}
+
+int32_t LuaInterface::luaDoPlayerClearStash(lua_State* L)
+{
+	//doPlayerClearStash(cid)
+	uint32_t cid = popNumber(L);
+
+	ScriptEnviroment* env = getEnv();
+	Player* player = env->getPlayerByUID(cid);
+	if(!player)
+	{
+		errorEx(getError(LUA_ERROR_PLAYER_NOT_FOUND));
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	player->clearStash();
+	lua_pushboolean(L, true);
+	return 1;
+}
+
+int32_t LuaInterface::luaDoPlayerTransferItemToStash(lua_State* L)
+{
+	//doPlayerTransferItemToStash(cid, itemid, count)
+	uint32_t count = popNumber(L);
+	uint16_t itemId = popNumber(L);
+	uint32_t cid = popNumber(L);
+
+	ScriptEnviroment* env = getEnv();
+	Player* player = env->getPlayerByUID(cid);
+	if(!player)
+	{
+		errorEx(getError(LUA_ERROR_PLAYER_NOT_FOUND));
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	lua_pushboolean(L, player->transferItemToStash(itemId, count));
+	return 1;
+}
+
+int32_t LuaInterface::luaDoPlayerTransferItemFromStash(lua_State* L)
+{
+	//doPlayerTransferItemFromStash(cid, itemid, count)
+	uint32_t count = popNumber(L);
+	uint16_t itemId = popNumber(L);
+	uint32_t cid = popNumber(L);
+
+	ScriptEnviroment* env = getEnv();
+	Player* player = env->getPlayerByUID(cid);
+	if(!player)
+	{
+		errorEx(getError(LUA_ERROR_PLAYER_NOT_FOUND));
+		lua_pushboolean(L, false);
+		return 1;
+	}
+
+	lua_pushboolean(L, player->transferItemFromStash(itemId, count));
+	return 1;
+}
 
 #define SHIFT_OPERATOR(type, name, op)\
 	int32_t LuaInterface::luaBit##name(lua_State* L)\

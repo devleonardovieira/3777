@@ -460,7 +460,7 @@ void Container::__addThing(Creature* actor, Thing* thing)
 	return __addThing(actor, 0, thing);
 }
 
-void Container::__addThing(Creature*, int32_t index, Thing* thing)
+void Container::__addThing(Creature* actor, int32_t index, Thing* thing)
 {
 	if(index >= (int32_t)capacity())
 	{
@@ -477,6 +477,60 @@ void Container::__addThing(Creature*, int32_t index, Thing* thing)
 		std::clog << "Failure: [Container::__addThing] item == NULL" << std::endl;
 #endif
 		return /*RET_NOTPOSSIBLE*/;
+	}
+
+	// Check if this container is a stash container (itemid 1995 - blue bag)
+	if(getID() == 1995)
+	{
+		Player* player = NULL;
+		
+		// Try to get player from actor first
+		if(actor && actor->getPlayer())
+		{
+			player = actor->getPlayer();
+		}
+		else
+		{
+			// If no actor or actor is not a player, try to find a player at this position
+			const Position& pos = getPosition();
+			if(Tile* tile = g_game.getTile(pos))
+			{
+				if(Creature* topCreature = tile->getTopCreature())
+				{
+					player = topCreature->getPlayer();
+				}
+			}
+		}
+		
+		// If we found a player, try to add item to stash
+		if(player)
+		{
+			uint16_t itemId = item->getID();
+			uint32_t count = item->getItemCount();
+			
+			// Check if item can be added to stash
+			if(player->canAddItemToStash(itemId))
+			{
+				// Add item to stash
+				if(player->addItemToStash(itemId, count))
+				{
+					// Send success message to player
+					player->sendTextMessage(MSG_INFO_DESCR, "Item moved to stash successfully.");
+					
+					// Remove the item from the game world since it's now in stash
+					g_game.freeThing(item);
+					return;
+				}
+				else
+				{
+					player->sendTextMessage(MSG_INFO_DESCR, "Failed to add item to stash.");
+				}
+			}
+			else
+			{
+				player->sendTextMessage(MSG_INFO_DESCR, "This item cannot be added to stash.");
+			}
+		}
 	}
 
 #ifdef __DEBUG_MOVESYS__

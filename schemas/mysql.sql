@@ -194,6 +194,15 @@ CREATE TABLE `player_storage`
 	FOREIGN KEY (`player_id`) REFERENCES `players`(`id`) ON DELETE CASCADE
 ) ENGINE = InnoDB;
 
+CREATE TABLE `player_stash`
+(
+	`player_id` INT NOT NULL DEFAULT 0,
+	`item_id` SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+	`count` INT UNSIGNED NOT NULL DEFAULT 0,
+	KEY (`player_id`), UNIQUE (`player_id`, `item_id`),
+	FOREIGN KEY (`player_id`) REFERENCES `players`(`id`) ON DELETE CASCADE
+) ENGINE = InnoDB;
+
 CREATE TABLE `player_viplist`
 (
 	`player_id` INT NOT NULL,

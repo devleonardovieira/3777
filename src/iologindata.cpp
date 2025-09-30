@@ -735,6 +735,22 @@ bool IOLoginData::loadPlayer(Player* player, const std::string& name, bool preLo
 		result->free();
 	}
 
+	//load stash items
+	query.str("");
+	query << "SELECT `item_id`, `count` FROM `player_stash` WHERE `player_id` = " << player->getGUID();
+	if((result = db->storeQuery(query.str())))
+	{
+		do
+		{
+			uint16_t itemId = result->getDataInt("item_id");
+			uint32_t count = result->getDataInt("count");
+			if(count > 0)
+				player->addItemToStash(itemId, count);
+		}
+		while(result->next());
+		result->free();
+	}
+
 	player->updateInventoryWeight();
 	player->updateItemsLight(true);
 	player->updateBaseSpeed();
@@ -1031,6 +1047,27 @@ bool IOLoginData::savePlayer(Player* player, bool preSave/* = true*/, bool shall
 
 		if(!query_insert.addRow(buffer))
 			return false;
+	}
+
+	if(!query_insert.execute())
+		return false;
+
+	//save stash items
+	query.str("");
+	query << "DELETE FROM `player_stash` WHERE `player_id` = " << player->getGUID();
+	if(!db->query(query.str()))
+		return false;
+
+	query_insert.setQuery("INSERT INTO `player_stash` (`player_id`, `item_id`, `count`) VALUES ");
+	const StashItemList& stashItems = player->getStashItems();
+	for(StashItemList::const_iterator it = stashItems.begin(); it != stashItems.end(); ++it)
+	{
+		if(it->second > 0)
+		{
+			sprintf(buffer, "%u, %u, %u", player->getGUID(), it->first, it->second);
+			if(!query_insert.addRow(buffer))
+				return false;
+		}
 	}
 
 	if(!query_insert.execute())

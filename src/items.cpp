@@ -95,6 +95,7 @@ ItemType::ItemType()
 	transformUseTo[PLAYERSEX_MALE] = 0;
 	transformToFree = 0;
 	levelDoor = 0;
+	stashCategory = 4; // Default to "Others" category
 
 	memset(floorChange, 0, sizeof(floorChange));
 }
@@ -693,6 +694,11 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 			{
 				if(readXMLInteger(itemAttributesNode, "value", intValue))
 					it.maxItems = intValue;
+			}
+			else if(tmpStrValue == "stashcategory")
+			{
+				if(readXMLInteger(itemAttributesNode, "value", intValue))
+					it.stashCategory = static_cast<uint8_t>(intValue);
 			}
 			else if(tmpStrValue == "fluidsource")
 			{

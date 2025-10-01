@@ -18,22 +18,21 @@
 #ifndef __LUASCRIPT__
 #define __LUASCRIPT__
 #include "otsystem.h"
-#ifdef __LUAJIT__
-#include <lua.hpp>
 
-extern "C"
-{
-	#include <lauxlib.h>
-	#include <lualib.h>
-}
+#if __has_include("luajit/lua.hpp")
+#include <luajit/lua.hpp>
 #else
+#include <lua.hpp>
+#endif
 
-extern "C"
-{
-	#include "lua.h"
-	#include "lualib.h"
-	#include "lauxlib.h"
-}
+#if LUA_VERSION_NUM >= 502
+#ifndef LUA_COMPAT_ALL
+#ifndef LUA_COMPAT_MODULE
+#define luaL_register(L, libname, l) (luaL_newlib(L, l), lua_pushvalue(L, -1), lua_setglobal(L, libname))
+#endif
+#undef lua_equal
+#define lua_equal(L, i1, i2) lua_compare(L, (i1), (i2), LUA_OPEQ)
+#endif
 #endif
 
 #include "database.h"
@@ -128,7 +127,7 @@ class ScriptEnviroment
 		uint32_t addThing(Thing* thing);
 		void insertThing(uint32_t uid, Thing* thing);
 		void removeThing(uint32_t uid);
-        
+
 		static void addTempItem(ScriptEnviroment* env, Item* item);
 		static void removeTempItem(ScriptEnviroment* env, Item* item);
 		static void removeTempItem(Item* item);
@@ -324,11 +323,6 @@ class LuaInterface
 		virtual void registerFunctions();
 
 		//lua functions
-//Ping
-        static int32_t luaDoPlayerSendPing(lua_State* L);
-        static int32_t luaGetPlayerLastPing(lua_State* L);
-        static int32_t luaGetPlayerLastPong(lua_State* L);
-        static int32_t luaGetOtsysTime(lua_State* L);
 		static int32_t luaGetCastsOnline(lua_State* L);
 		static int32_t luaDoPlayerSetCastPassword(lua_State* L);
 		static int32_t luaDoPlayerSetCastDescription(lua_State* L);
@@ -346,7 +340,6 @@ class LuaInterface
 		static int32_t luaDoPlayerSetSkillLevel(lua_State* L);
 		
 		static int32_t luaDoRemoveItem(lua_State* L);
-		static int32_t luaDoRemoveDepot(lua_State* L);
 		static int32_t luaDoPlayerFeed(lua_State* L);
 		static int32_t luaDoPlayerSendCancel(lua_State* L);
 		static int32_t luaDoSendDefaultCancel(lua_State* L);
@@ -386,7 +379,6 @@ class LuaInterface
 		static int32_t luaDoPlayerSetMaxCapacity(lua_State* L);
 		static int32_t luaDoPlayerAddSpentMana(lua_State* L);
 		static int32_t luaDoPlayerAddItem(lua_State* L);
-		static int32_t luaDoCreatureCastSpell(lua_State* L); // by OrochiElf
 		static int32_t luaDoPlayerAddItemEx(lua_State* L);
 		static int32_t luaDoTileAddItemEx(lua_State* L);
 		static int32_t luaDoAddContainerItemEx(lua_State* L);
@@ -405,6 +397,8 @@ class LuaInterface
 		static int32_t luaDoPlayerAddSoul(lua_State* L);
 		static int32_t luaDoPlayerSetStamina(lua_State* L);
 		static int32_t luaDoPlayerAddExperience(lua_State* L);
+
+		// Stash system functions
 		static int32_t luaDoPlayerOpenStash(lua_State* L);
 		static int32_t luaDoPlayerAddItemToStash(lua_State* L);
 		static int32_t luaDoPlayerRemoveItemFromStash(lua_State* L);
@@ -415,9 +409,6 @@ class LuaInterface
 		static int32_t luaDoPlayerSetGuildId(lua_State* L);
 		static int32_t luaDoPlayerSetGuildLevel(lua_State* L);
 		static int32_t luaDoPlayerSetGuildNick(lua_State* L);
-		static int32_t luaGetSkill(lua_State* L);
-		static int32_t luaIsChampion(lua_State* L);
-		static int32_t luaGetDefenses(lua_State* L);
 		static int32_t luaDoPlayerSetSex(lua_State* L);
 		static int32_t luaDoPlayerSetIdleTime(lua_State* L);
 		static int32_t luaGetPlayerIdleTime(lua_State* L);
@@ -428,8 +419,6 @@ class LuaInterface
 		static int32_t luaDoCreatureSetSpeakType(lua_State* L);
 		static int32_t luaGetCreatureGuildEmblem(lua_State* L);
 		static int32_t luaDoCreatureSetGuildEmblem(lua_State* L);
-
-
 		static int32_t luaGetCreaturePartyShield(lua_State* L);
 		static int32_t luaDoCreatureSetPartyShield(lua_State* L);
 		static int32_t luaGetCreatureSkullType(lua_State* L);
@@ -489,7 +478,6 @@ class LuaInterface
 		static int32_t luaGetTileThingByPos(lua_State* L);
 		static int32_t luaGetTopCreature(lua_State* L);
 		static int32_t luaGetTileInfo(lua_State* L);
-		static int32_t luaGetContainerItemByIndex(lua_State* L);
 		static int32_t luaDoTileQueryAdd(lua_State* L);
 		static int32_t luaGetHouseInfo(lua_State* L);
 		static int32_t luaGetHouseAccessList(lua_State* L);
@@ -568,9 +556,6 @@ class LuaInterface
 		static int32_t luaGetPlayerPartner(lua_State* L);
 		static int32_t luaDoPlayerSetPartner(lua_State* L);
 		static int32_t luaDoPlayerFollowCreature(lua_State* L);
-		static int32_t luaDoCreatureFollowCreature(lua_State* L);
-		
-		static int32_t luaDoPlayerTargetCreature(lua_State* L);
 		static int32_t luaGetPlayerParty(lua_State* L);
 		static int32_t luaDoPlayerJoinParty(lua_State* L);
 		static int32_t luaDoPlayerLeaveParty(lua_State* L);
@@ -579,7 +564,7 @@ class LuaInterface
 		static int32_t luaDoCreatureSetStorage(lua_State* L);
 		static int32_t luaDoPlayerAddBlessing(lua_State* L);
 		static int32_t luaGetPlayerBlessing(lua_State* L);
-		static int32_t luaSetCreatureName(lua_State* L);
+
 		static int32_t luaDoGuildAddEnemy(lua_State* L);
 		static int32_t luaDoGuildRemoveEnemy(lua_State* L);
 
@@ -651,7 +636,6 @@ class LuaInterface
 		static int32_t luaGetCreatureSummons(lua_State* L);
 		static int32_t luaGetHighscoreString(lua_State* L);
 		static int32_t luaIsSightClear(lua_State* L);
-		static int32_t luaIsInArray(lua_State* L);
 		static int32_t luaAddEvent(lua_State* L);
 		static int32_t luaStopEvent(lua_State* L);
 		static int32_t luaRegisterCreatureEvent(lua_State* L);
@@ -674,7 +658,6 @@ class LuaInterface
 		static int32_t luaGetGameState(lua_State* L);
 		static int32_t luaDoSetGameState(lua_State* L);
 		static int32_t luaGetChannelUsers(lua_State* L);
-		static int32_t luaDoPlayerOpenChannel(lua_State* L);
 		static int32_t luaGetPlayersOnline(lua_State* L);
 		static int32_t luaDoExecuteRaid(lua_State* L);
 		static int32_t luaDoReloadInfo(lua_State* L);
@@ -687,7 +670,6 @@ class LuaInterface
 		static int32_t luaGetItemInfo(lua_State* L);
 		static int32_t luaGetItemWeight(lua_State* L);
 		static int32_t luaGetItemParent(lua_State* L);
-		static int32_t luaSetWorldState(lua_State* L);
 		static int32_t luaGetItemAttribute(lua_State* L);
 		static int32_t luaDoItemSetAttribute(lua_State* L);
 		static int32_t luaDoItemEraseAttribute(lua_State* L);

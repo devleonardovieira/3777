@@ -29,7 +29,7 @@ class StashCategoryManager
 public:
     static StashCategoryManager& getInstance();
 
-    // Inicializa��o do sistema
+    // Inicialização do sistema
     bool loadFromItemTypes();
     
     // Consultas de categoria
@@ -37,11 +37,11 @@ public:
     std::string getCategoryName(StashCategory_t category) const;
     std::vector<uint16_t> getItemsByCategory(StashCategory_t category) const;
     
-    // Valida��es
+    // Validações
     bool isValidCategory(StashCategory_t category) const;
     bool hasCategory(uint16_t itemId) const;
     
-    // Informa��es do sistema
+    // Informações do sistema
     std::vector<StashCategory_t> getAllCategories() const;
     size_t getCategoryCount() const;
     size_t getItemCount() const;
@@ -50,7 +50,7 @@ private:
     StashCategoryManager() = default;
     ~StashCategoryManager() = default;
     
-    // N�o permitir c�pia
+    // Não permitir cópia
     StashCategoryManager(const StashCategoryManager&) = delete;
     StashCategoryManager& operator=(const StashCategoryManager&) = delete;
     
@@ -59,7 +59,7 @@ private:
     std::map<StashCategory_t, std::string> categoryNames;
     std::map<StashCategory_t, std::vector<uint16_t>> categorizedItems;
     
-    // M�todos auxiliares
+    // Métodos auxiliares
     void initializeCategoryNames();
 };
 

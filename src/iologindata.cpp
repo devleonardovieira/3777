@@ -735,6 +735,7 @@ bool IOLoginData::loadPlayer(Player* player, const std::string& name, bool preLo
 		result->free();
 	}
 
+	//load stash items
 	query.str("");
 	query << "SELECT `item_id`, `count` FROM `player_stash` WHERE `player_id` = " << player->getGUID();
 	if((result = db->storeQuery(query.str())))
@@ -749,7 +750,6 @@ bool IOLoginData::loadPlayer(Player* player, const std::string& name, bool preLo
 		while(result->next());
 		result->free();
 	}
-
 
 	player->updateInventoryWeight();
 	player->updateItemsLight(true);
@@ -1070,7 +1070,6 @@ bool IOLoginData::savePlayer(Player* player, bool preSave/* = true*/, bool shall
 		}
 	}
 
-
 	if(!query_insert.execute())
 		return false;
 
@@ -1210,52 +1209,54 @@ bool IOLoginData::playerDeath(Player* _player, const DeathList& dl)
 
 bool IOLoginData::playerMail(Creature* actor, std::string name, uint32_t townId, Item* item)
 {
-    Player* player = g_game.getPlayerByNameEx(name);
-    if(!player)
-        return false;
+	Player* player = g_game.getPlayerByNameEx(name);
+	if(!player)
+		return false;
 
-    // Não altera townId, usa exatamente o valor recebido, mesmo que seja zero
-    Depot* depot = player->getDepot(townId, true);
-    if(!depot || g_game.internalMoveItem(actor, item->getParent(), depot, INDEX_WHEREEVER,
-        item, item->getItemCount(), NULL, FLAG_NOLIMIT) != RET_NOERROR)
-    {
-        if(player->isVirtual())
-            delete player;
+	if(!townId)
+		townId = player->getTown();
 
-        return false;
-    }
+	Depot* depot = player->getDepot(townId, true);
+	if(!depot || g_game.internalMoveItem(actor, item->getParent(), depot, INDEX_WHEREEVER,
+		item, item->getItemCount(), NULL, FLAG_NOLIMIT) != RET_NOERROR)
+	{
+		if(player->isVirtual())
+			delete player;
 
-    g_game.transformItem(item, item->getID() + 1);
-    bool result = true, opened = player->getContainerID(depot) != -1;
+		return false;
+	}
 
-    Player* tmp = NULL;
-    if(actor)
-        tmp = actor->getPlayer();
+	g_game.transformItem(item, item->getID() + 1);
+	bool result = true, opened = player->getContainerID(depot) != -1;
 
-    CreatureEventList mailEvents = player->getCreatureEvents(CREATURE_EVENT_MAIL_RECEIVE);
-    for(CreatureEventList::iterator it = mailEvents.begin(); it != mailEvents.end(); ++it)
-    {
-        if(!(*it)->executeMailReceive(player, tmp, item, opened) && result)
-            result = false;
-    }
+	Player* tmp = NULL;
+	if(actor)
+		tmp = actor->getPlayer();
 
-    if(tmp)
-    {
-        mailEvents = tmp->getCreatureEvents(CREATURE_EVENT_MAIL_SEND);
-        for(CreatureEventList::iterator it = mailEvents.begin(); it != mailEvents.end(); ++it)
-        {
-            if(!(*it)->executeMailSend(tmp, player, item, opened) && result)
-                result = false;
-        }
-    }
+	CreatureEventList mailEvents = player->getCreatureEvents(CREATURE_EVENT_MAIL_RECEIVE);
+	for(CreatureEventList::iterator it = mailEvents.begin(); it != mailEvents.end(); ++it)
+	{
+		if(!(*it)->executeMailReceive(player, tmp, item, opened) && result)
+			result = false;
+	}
 
-    if(player->isVirtual())
-    {
-        IOLoginData::getInstance()->savePlayer(player);
-        delete player;
-    }
+	if(tmp)
+	{
+		mailEvents = tmp->getCreatureEvents(CREATURE_EVENT_MAIL_SEND);
+		for(CreatureEventList::iterator it = mailEvents.begin(); it != mailEvents.end(); ++it)
+		{
+			if(!(*it)->executeMailSend(tmp, player, item, opened) && result)
+				result = false;
+		}
+	}
 
-    return result;
+	if(player->isVirtual())
+	{
+		IOLoginData::getInstance()->savePlayer(player);
+		delete player;
+	}
+
+	return result;
 }
 
 bool IOLoginData::hasFlag(const std::string& name, PlayerFlags value)
@@ -1539,9 +1540,9 @@ bool IOLoginData::createCharacter(uint32_t accountId, std::string characterName,
 
 	Town* town = Towns::getInstance()->getTown(townId);
 
-	uint16_t healthMax = 150, manaMax = 0, capMax = 400, lookType = 1467;
+	uint16_t healthMax = 150, manaMax = 0, capMax = 400, lookType = 136;
 	if(sex % 2)
-		lookType = 1467;
+		lookType = 128;
 
 	uint32_t level = g_config.getNumber(ConfigManager::START_LEVEL), tmpLevel = std::min((uint32_t)7, (level - 1));
 	uint64_t exp = 0;
@@ -1765,87 +1766,4 @@ bool IOLoginData::resetGuildInformation(uint32_t guid)
 	DBQuery query;
 	query << "UPDATE `players` SET `rank_id` = 0, `guildnick` = '' WHERE `id` = " << guid << " AND `deleted` = 0" << db->getUpdateLimiter();
 	return db->query(query.str());
-}
-
-std::string IOLoginData::getPlayerLevelAndVocation(const std::string& name) const
-{
-    Database* db = Database::getInstance();
-    DBQuery query;
-	query << "SELECT `looktype`, `level`, `vocation`, `achievkill`, `achievquest`, `champlogout`, "
-		<< "`lookbody`, `lookfeet`, `lookhead`, `looklegs`, `premdays` "
-		<< "FROM `players` p "
-		<< "LEFT JOIN `accounts` a ON a.`id` = p.`account_id` "
-		<< "WHERE `p`.`name` " << db->getStringComparer() << db->escapeString(name) << ";";
-
-    DBResult* result;
-    if (!(result = db->storeQuery(query.str())))
-    {
-        // Aqui, em vez de retornar false, você pode lançar uma exceção ou lidar com o erro de outra forma.
-        throw std::runtime_error("Error retrieving player data from the database.");
-    }
-	
-	const uint32_t playerLooktype = result->getDataInt("looktype");
-	const uint32_t playerVocation = result->getDataInt("vocation");
-	const uint32_t playerLevel = result->getDataInt("level");
-	const uint32_t PlayerAchievKill = result->getDataInt("achievkill");
-	const uint32_t PlayerAchievQuest = result->getDataInt("achievquest");
-	const uint32_t PlayerChamp = result->getDataInt("champlogout");
-	const uint32_t playerLookbody = result->getDataInt("lookbody");
-	const uint32_t playerLookfeet = result->getDataInt("lookfeet");
-	const uint32_t playerLookhead = result->getDataInt("lookhead");
-	const uint32_t playerLooklegs = result->getDataInt("looklegs");
-	const uint32_t premydays = result->getDataInt("premdays");
-	
-	std::stringstream ret;
-	ret << playerLooktype;
-	ret << "," << playerLevel;
-	Vocation* voc = Vocations::getInstance()->getVocation(playerVocation);
-	
-	if(!voc | playerVocation == 0)
-		return ret.str();
-
-	
-	ret << "," << voc->getId();
-	ret << "," << PlayerAchievKill;
-	ret << "," << PlayerAchievQuest;
-	ret << "," << PlayerChamp;
-	ret << "," << playerLookbody;
-	ret << "," << playerLookfeet;
-	ret << "," << playerLookhead;
-	ret << "," << playerLooklegs;
-	ret << "," << premydays;
-	
-	result->free();
-	
-uint32_t accountId = getAccountIdByName(name);
-DBQuery seasonQuery;
-seasonQuery << "SELECT `season1item1`, `season1item2`, `season1item3`, `season1item4`, `season1item5`, `season1item6`, `season1item7`, `season1item8`, `season1item9`, `season1item10`  FROM `seasonrewards` WHERE `id` = " << accountId << ";";
-DBResult* seasonResult;
-if((seasonResult = db->storeQuery(seasonQuery.str()))) {
-    const uint32_t season1pontos = seasonResult->getDataInt("season1item1");
-    const uint32_t season2pontos = seasonResult->getDataInt("season1item2");
-    const uint32_t season3pontos = seasonResult->getDataInt("season1item3");
-    const uint32_t season4pontos = seasonResult->getDataInt("season1item4");
-    const uint32_t season5pontos = seasonResult->getDataInt("season1item5");
-    const uint32_t season6pontos = seasonResult->getDataInt("season1item6");
-    const uint32_t season7pontos = seasonResult->getDataInt("season1item7");
-    const uint32_t season8pontos = seasonResult->getDataInt("season1item8");
-    const uint32_t season9pontos = seasonResult->getDataInt("season1item9");
-    const uint32_t season10pontos = seasonResult->getDataInt("season1item10");
-
-    ret << "," << season1pontos;
-    ret << "," << season2pontos;
-    ret << "," << season3pontos;
-    ret << "," << season4pontos;
-    ret << "," << season5pontos;
-    ret << "," << season6pontos;
-    ret << "," << season7pontos;
-    ret << "," << season8pontos;
-    ret << "," << season9pontos;
-    ret << "," << season10pontos;
-    
-    seasonResult->free();
-}
-	
-	return ret.str();
 }

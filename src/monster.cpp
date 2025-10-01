@@ -58,8 +58,6 @@ Monster::Monster(MonsterType* _mType):
 	mType = _mType;
 	spawn = NULL;
 	raid = NULL;
-	name = _mType->name;
-    nameDescription = _mType->nameDescription;
 	defaultOutfit = mType->outfit;
 	currentOutfit = mType->outfit;
 
@@ -73,6 +71,7 @@ Monster::Monster(MonsterType* _mType):
 	setSkull(mType->skull);
 	setShield(mType->partyShield);
 	setEmblem(mType->guildEmblem);
+
 	hideName = mType->hideName, hideHealth = mType->hideHealth;
 
 	minCombatValue = 0;
@@ -159,12 +158,6 @@ void Monster::onAttackedCreatureDrain(Creature* target, int32_t points)
 		master->onSummonAttackedCreatureDrain(this, target, points);
 }
 
-void Monster::alertSpawn()
-{
- CreatureEventList onSpawnEvents = getCreatureEvents(CREATURE_EVENT_SPAWN);
-        for(CreatureEventList::iterator it = onSpawnEvents.begin(); it != onSpawnEvents.end(); ++it)
-           (*it)->executeSpawn(this);    
-}
 void Monster::onCreatureAppear(const Creature* creature)
 {
 	Creature::onCreatureAppear(creature);
@@ -553,18 +546,8 @@ bool Monster::selectTarget(Creature* creature)
 #endif
 		return false;
 	}
-if(!isHostile() && getHealth() ==  getMaxHealth() && !isSummon()){
-		return false;
-	}	
-	
-CreatureEventList targetEvents = getCreatureEvents(CREATURE_EVENT_TARGET);
-for(CreatureEventList::iterator it = targetEvents.begin(); it != targetEvents.end(); ++it)
-{
-    if(!(*it)->executeTarget(this, creature))
-        return false;
-}
 
-if((isHostile() || isSummon() || !isHostile() && getHealth() !=  getMaxHealth()) && setAttackedCreature(creature) && !isSummon())
+	if((isHostile() || isSummon()) && setAttackedCreature(creature) && !isSummon())
 		Dispatcher::getInstance().addTask(createTask(
 			boost::bind(&Game::checkCreatureAttack, &g_game, getID())));
 
@@ -641,10 +624,6 @@ void Monster::onThink(uint32_t interval)
 
 	if(teleportToMaster && doTeleportToMaster())
 		teleportToMaster = false;
-		if(getMaster()){
-    	if(!Position::areInRange<6,6,0>(getPosition(), getMaster()->getPosition()))
-                        doTeleportToMaster();           
-         } 
 
 	addEventWalk();
 	if(isSummon())
@@ -678,20 +657,6 @@ void Monster::doAttacking(uint32_t interval)
 {
 	if(!attackedCreature || (isSummon() && attackedCreature == this))
 		return;
-		if(Creature* creature = attackedCreature->getCreature())
-{
-    CreatureEventList targetEvents = getCreatureEvents(CREATURE_EVENT_TARGET);
-    for(CreatureEventList::iterator it = targetEvents.begin(); it != targetEvents.end(); ++it)
-    {
-        if(!(*it)->executeTarget(this, creature))
-        {
-            setFollowCreature(NULL);
-            setAttackedCreature(NULL);
-            searchTarget(TARGETSEARCH_NEAREST);
-            break;
-        }
-    }
-}
 
 	bool updateLook = true;
 	resetTicks = interval;
@@ -752,7 +717,8 @@ void Monster::doAttacking(uint32_t interval)
 
 bool Monster::canUseAttack(const Position& pos, const Creature* target) const
 {
-
+	if(!isHostile())
+		return true;
 
 	const Position& targetPos = target->getPosition();
 	for(SpellList::iterator it = mType->spellAttackList.begin(); it != mType->spellAttackList.end(); ++it)
@@ -1484,7 +1450,7 @@ void Monster::getPathSearchParams(const Creature* creature, FindPathParams& fpp)
 	{
 		if(master == creature)
 		{
-			fpp.maxTargetDist = 1;
+			fpp.maxTargetDist = 2;
 			fpp.fullPathSearch = true;
 		}
 		else if(mType->targetDistance <= 1)

@@ -41,9 +41,9 @@ bool ConfigManager::load()
 	if(L)
 		lua_close(L);
 
-	L = lua_open();
+	L = luaL_newstate();
 	if(!L)
-		return false;
+		throw std::runtime_error("Failed to allocate memory");
 
 	luaL_openlibs(L);
 	if(luaL_dofile(L, m_confString[CONFIG_FILE].c_str()))
@@ -115,7 +115,7 @@ bool ConfigManager::load()
 		m_confBool[LOGIN_ONLY_LOGINSERVER] = getGlobalBool("loginOnlyWithLoginServer", false);
 		#endif
 		m_confString[ENCRYPTION_TYPE] = getGlobalString("encryptionType", "sha1");
-		m_confBool[BIND_ONLY_GLOBAL_ADDRESS] = getGlobalBool("bindOnlyGlobalAddress", false);
+		m_confBool[BIND_ONLY_GLOBAL_ADDRESS] = getGlobalBool("bindOnlyGlobalAddress", true);
 	}
 
 	m_confString[MAP_AUTHOR] = getGlobalString("mapAuthor", "Unknown");
@@ -226,7 +226,6 @@ bool ConfigManager::load()
 	m_confBool[TRACER_BOX] = getGlobalBool("promptExceptionTracerErrorBox", true);
 	m_confNumber[LOGIN_PROTECTION] = getGlobalNumber("loginProtectionPeriod", 10 * 1000);
 	m_confBool[STORE_DIRECTION] = getGlobalBool("storePlayerDirection", false);
-	m_confNumber[PLAYER_DEEPNESS] = getGlobalNumber("playerQueryDeepness", 1);
 	m_confDouble[CRITICAL_HIT_MUL] = getGlobalDouble("criticalHitMultiplier", 1);
 	m_confNumber[STAIRHOP_DELAY] = getGlobalNumber("stairhopDelay", 2 * 1000);
 	m_confNumber[RATE_STAMINA_LOSS] = getGlobalNumber("rateStaminaLoss", 1);

@@ -43,39 +43,61 @@ m_interface("Spell Interface")
 
 ReturnValue Spells::onPlayerSay(Player* player, const std::string& words)
 {
-    std::string reWords = words;
-    trimString(reWords);
+	std::string reWords = words;
+	trimString(reWords);
 
-    InstantSpell* instantSpell = getInstantSpell(reWords);
-    if (!instantSpell)
-        return RET_NOTPOSSIBLE;
+	InstantSpell* instantSpell = getInstantSpell(reWords);
+	if(!instantSpell)
+		return RET_NOTPOSSIBLE;
 
-    size_t size = instantSpell->getWords().length();
-    std::string param = reWords.substr(size, reWords.length() - size), reParam = "";
-    if (instantSpell->getHasParam() && !param.empty() && param[0] == ' ')
-    {
-        size_t quote = param.find('"', 1);
-        if (quote != std::string::npos)
-        {
-            size_t tmp = param.find('"', quote + 1);
-            if (tmp == std::string::npos)
-                tmp = param.length();
+	size_t size = instantSpell->getWords().length();
+	std::string param = reWords.substr(size, reWords.length() - size), reParam = "";
+	if(instantSpell->getHasParam() && !param.empty() && param[0] == ' ')
+	{
+		size_t quote = param.find('"', 1);
+		if(quote != std::string::npos)
+		{
+			size_t tmp = param.find('"', quote + 1);
+			if(tmp == std::string::npos)
+				tmp = param.length();
 
-            reParam = param.substr(quote + 1, tmp - quote - 1);
-        }
-        else if (param.find(' ', 1) == std::string::npos)
-            reParam = param.substr(1, param.length());
+			reParam = param.substr(quote + 1, tmp - quote - 1);
+		}
+		else if(param.find(' ', 1) == std::string::npos)
+			reParam = param.substr(1, param.length());
 
-        trimString(reParam);
-    }
+		trimString(reParam);
+	}
 
-    Position pos = player->getPosition();
-    if (!instantSpell->castInstant(player, reParam))
-        return RET_NEEDEXCHANGE;
+	Position pos = player->getPosition();
+	if(!instantSpell->castInstant(player, reParam))
+		return RET_NEEDEXCHANGE;
 
-    return RET_NOERROR; // Não gera fala, apenas executa a magia
+	SpeakClasses type = SPEAK_SAY;
+	if(g_config.getBool(ConfigManager::EMOTE_SPELLS))
+		type = SPEAK_MONSTER_SAY;
+
+	if(!g_config.getBool(ConfigManager::SPELL_NAME_INSTEAD_WORDS))
+		return g_game.internalCreatureSay(player, type, reWords, player->isGhost()) ?
+			RET_NOERROR : RET_NOTPOSSIBLE;
+
+	std::string ret = instantSpell->getName();
+	if(param.length())
+	{
+		trimString(param);
+		size_t tmp = 0, rtmp = param.length();
+		if(param[0] == '"')
+			tmp = 1;
+
+		if(param[rtmp] == '"')
+			rtmp -= 1;
+
+		ret += ": " + param.substr(tmp, rtmp);
+	}
+
+	return g_game.internalCreatureSay(player, type, ret, player->isGhost(),
+		NULL, &pos) ? RET_NOERROR : RET_NOTPOSSIBLE;
 }
-
 
 void Spells::clear()
 {
@@ -580,6 +602,7 @@ bool Spell::checkSpell(Player* player) const
 	{
 		player->sendCancelMessage(RET_YOUAREEXHAUSTED);
 		if(isInstant())
+			g_game.addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
 
 		return false;
 	}
@@ -714,12 +737,14 @@ bool Spell::checkInstantSpell(Player* player, Creature* creature)
 			return true;
 
 		player->sendCancelMessage(RET_YOUMAYNOTCASTAREAONBLACKSKULL);
+		g_game.addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
 		return false;
 	}
 
 	if(!creature)
 	{
 		player->sendCancelMessage(RET_NOTPOSSIBLE);
+		g_game.addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
 		return false;
 	}
 
@@ -728,11 +753,12 @@ bool Spell::checkInstantSpell(Player* player, Creature* creature)
 		|| player->getSkullType(targetPlayer) != SKULL_NONE)
 		return true;
 
-	//if(player->getSecureMode() == SECUREMODE_ON)
-	//{
-		//player->sendCancelMessage(RET_TURNSECUREMODETOATTACKUNMARKEDPLAYERS);
-		//return false;
-	//}
+	if(player->getSecureMode() == SECUREMODE_ON)
+	{
+		player->sendCancelMessage(RET_TURNSECUREMODETOATTACKUNMARKEDPLAYERS);
+		g_game.addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
+		return false;
+	}
 
 	if(player->getSkull() == SKULL_BLACK)
 	{
@@ -873,6 +899,7 @@ bool Spell::checkRuneSpell(Player* player, const Position& toPos)
 			return true;
 
 		player->sendCancelMessage(RET_YOUMAYNOTCASTAREAONBLACKSKULL);
+		g_game.addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
 		return false;
 	}
 
@@ -888,12 +915,12 @@ bool Spell::checkRuneSpell(Player* player, const Position& toPos)
 		|| player->getSkullType(targetPlayer) != SKULL_NONE)
 		return true;
 
-	//if(player->getSecureMode() == SECUREMODE_ON)
-	//{
-		//player->sendCancelMessage(RET_TURNSECUREMODETOATTACKUNMARKEDPLAYERS);
-		//g_game.addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
-		//return false;
-	//}
+	if(player->getSecureMode() == SECUREMODE_ON)
+	{
+		player->sendCancelMessage(RET_TURNSECUREMODETOATTACKUNMARKEDPLAYERS);
+		g_game.addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
+		return false;
+	}
 
 	if(player->getSkull() == SKULL_BLACK)
 	{
@@ -1075,6 +1102,7 @@ bool InstantSpell::castInstant(Player* player, const std::string& param)
 			if((!target || target->getHealth() <= 0) && !casterTargetOrDirection)
 			{
 				player->sendCancelMessage(ret);
+				g_game.addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
 				return false;
 			}
 		}
@@ -1088,6 +1116,7 @@ bool InstantSpell::castInstant(Player* player, const std::string& param)
 			if((!target || target->getHealth() <= 0) && !casterTargetOrDirection)
 			{
 				player->sendCancelMessage(RET_YOUCANONLYUSEITONCREATURES);
+				g_game.addMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
 				return false;
 			}
 		}

@@ -267,8 +267,8 @@ int32_t Items::loadFromOtb(std::string file)
 					if(!props.getShort(serverId))
 						return ERROR_INVALID_FORMAT;
 
-					if(serverId > 40000 && serverId < 40100)
-						serverId = serverId - 40000;
+					if(serverId > 20000 && serverId < 20100)
+						serverId = serverId - 20000;
 					else if(lastId > 99 && lastId != serverId - 1)
 					{
 						static ItemType dummyItemType;
@@ -431,7 +431,7 @@ bool Items::loadFromXml()
 
 		//check bed items
 		if((it->transformToFree || it->transformUseTo[PLAYERSEX_FEMALE] || it->transformUseTo[PLAYERSEX_MALE]) && it->type != ITEM_TYPE_BED)
-		std::clog << "" << it->id << "" << std::endl;	
+			std::clog << "[Warning - Items::loadFromXml] Item " << it->id << " is not set as a bed-type." << std::endl;
 	}
 
 	for(xmlNodePtr paletteNode = paletteRoot->children; paletteNode; paletteNode = paletteNode->next)
@@ -498,9 +498,9 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 	int32_t intValue;
 	std::string strValue;
 
-	if(id > 40000 && id < 40100)
+	if(id > 20000 && id < 20100)
 	{
-		id = id - 40000;
+		id = id - 20000;
 
 		ItemType* iType = new ItemType();
 		iType->id = id;
@@ -695,7 +695,6 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 				if(readXMLInteger(itemAttributesNode, "value", intValue))
 					it.maxItems = intValue;
 			}
-
 			else if(tmpStrValue == "stashcategory")
 			{
 				if(readXMLInteger(itemAttributesNode, "value", intValue))
@@ -829,17 +828,6 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 						it.slotPosition |= SLOTP_RING;
 						it.wieldPosition = SLOT_RING;
 					}
-					else if(tmpStrValue == "left")
-					{
-						it.slotPosition |= SLOTP_LEFT;
-						it.wieldPosition = SLOT_LEFT;
-					}
-					else if(tmpStrValue == "right")
-					{
-						it.slotPosition |= SLOTP_RIGHT;
-						it.wieldPosition = SLOT_RIGHT;
-					}
-					
 					else if(tmpStrValue == "ammo")
 						it.wieldPosition = SLOT_AMMO;
 					else if(tmpStrValue == "hand")
@@ -1082,7 +1070,7 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 				if(readXMLInteger(itemAttributesNode, "value", intValue))
 					it.abilities.statsPercent[STAT_SOUL] = intValue;
 			}
-			else if(tmpStrValue == "chakralevelpoints" || tmpStrValue == "chakralevelpoint")
+			else if(tmpStrValue == "magiclevelpoints" || tmpStrValue == "magicpoints")
 			{
 				if(readXMLInteger(itemAttributesNode, "value", intValue))
 					it.abilities.stats[STAT_MAGICLEVEL] = intValue;
@@ -1522,7 +1510,7 @@ void Items::parseItemNode(xmlNodePtr itemNode, uint32_t id)
 						conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_ENERGY, false, 0);
 						combatType = COMBAT_ENERGYDAMAGE;
 					}
-					else if(tmpStrValue == "poison" || tmpStrValue == "earth")
+					else if(tmpStrValue == "earth" || tmpStrValue == "poison")
 					{
 						conditionDamage = new ConditionDamage(CONDITIONID_COMBAT, CONDITION_POISON, false, 0);
 						combatType = COMBAT_EARTHDAMAGE;

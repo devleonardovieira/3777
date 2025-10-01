@@ -54,7 +54,6 @@ Creature::Creature()
 	partyShield = SHIELD_NONE;
 	guildEmblem = EMBLEM_NONE;
 
-
 	health = 1000;
 	healthMax = 1000;
 	mana = 0;
@@ -62,7 +61,7 @@ Creature::Creature()
 
 	lastStep = 0;
 	lastStepCost = 1;
-	baseSpeed = 500;
+	baseSpeed = 220;
 	varSpeed = 0;
 
 	masterRadius = -1;
@@ -130,7 +129,7 @@ bool Creature::canSee(const Position& myPos, const Position& pos, uint32_t viewR
 
 bool Creature::canSee(const Position& pos) const
 {
-	return canSee(getPosition(), pos, 9, 9);
+	return canSee(getPosition(), pos, Map::maxViewportX, Map::maxViewportY);
 }
 
 bool Creature::canSeeCreature(const Creature* creature) const
@@ -140,21 +139,17 @@ bool Creature::canSeeCreature(const Creature* creature) const
 
 bool Creature::canWalkthrough(const Creature* creature) const
 {
-    if(creature == this)
-        return true;
+	if(creature == this)
+		return true;
 
-    // Se a criatura for um summon, permite atravessar
-    if(creature->getMaster())
-        return true;
-
-    if(const Creature* _master = creature->getMaster())
-    {   
-        if(_master != this && canWalkthrough(_master))
-            return true;
-    }
-    
-    return creature->isGhost() || creature->isWalkable() || (master &&
-        master != creature && master->canWalkthrough(creature));
+	if(const Creature* _master = creature->getMaster())
+	{	
+		if(_master != this && canWalkthrough(_master))
+			return true;
+	}
+	
+	return creature->isGhost() || creature->isWalkable() || (master &&
+		master != creature && master->canWalkthrough(creature));
 }
 
 int64_t Creature::getTimeSinceLastMove() const
@@ -284,7 +279,7 @@ void Creature::onWalk(Direction& dir)
 	if(!hasCondition(CONDITION_DRUNK))
 		return;
 
-	uint32_t r = random_range(0, 4);
+	uint32_t r = random_range(0, 16);
 	if(r > 4)
 		return;
 
@@ -304,7 +299,7 @@ void Creature::onWalk(Direction& dir)
 			break;
 	}
 
-	g_game.addMagicEffect(getPosition(), MAGIC_EFFECT_ICETORNADO);
+	g_game.internalCreatureSay(this, SPEAK_MONSTER_SAY, "Hicks!", isGhost());
 }
 
 bool Creature::getNextStep(Direction& dir, uint32_t&)
@@ -544,7 +539,7 @@ void Creature::onCreatureMove(const Creature* creature, const Tile* newTile, con
 		else
 			stopEventWalk();
 
-	/*	if(!summons.empty() && (!g_config.getBool(ConfigManager::TELEPORT_SUMMONS) ||
+		if(!summons.empty() && (!g_config.getBool(ConfigManager::TELEPORT_SUMMONS) ||
 			(g_config.getBool(ConfigManager::TELEPORT_PLAYER_SUMMONS) && !getPlayer())))
 		{
 			std::list<Creature*>::iterator cit;
@@ -559,7 +554,7 @@ void Creature::onCreatureMove(const Creature* creature, const Tile* newTile, con
 
 			for(cit = despawnList.begin(); cit != despawnList.end(); ++cit)
 				g_game.removeCreature((*cit), true);
-		}*/
+		}
 
 		if(newTile->getZone() != oldTile->getZone())
 			onChangeZone(getZone());

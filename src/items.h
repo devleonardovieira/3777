@@ -40,7 +40,7 @@
 #define	SLOTP_AMMO 1 << 9
 #define	SLOTP_DEPOT 1 << 10
 #define	SLOTP_TWO_HAND 1 << 11
-#define SLOTP_HAND 1 << 12
+#define SLOTP_HAND SLOTP_LEFT | SLOTP_RIGHT
 
 enum ItemTypes_t
 {
@@ -150,9 +150,10 @@ class ItemType
 
 		int32_t attack, extraAttack, defense, extraDefense, armor, breakChance, hitChance, maxHitChance,
 			runeLevel, runeMagLevel, lightLevel, lightColor, decayTo, rotateTo, alwaysOnTopOrder;
-		uint32_t shootRange, charges, decayTime, attackSpeed, wieldInfo, minReqLevel, minReqMagicLevel, levelDoor;
+		uint32_t shootRange, charges, decayTime, attackSpeed, wieldInfo, minReqLevel, minReqMagicLevel,
+			worth, levelDoor;
+		
 		uint8_t stashCategory; // Stash category for item organization
-		uint64_t worth;
 
 		std::string name, pluralName, article, description, runeSpellName, vocationString;
 

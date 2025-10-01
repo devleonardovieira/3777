@@ -17,9 +17,11 @@
 
 #ifndef __OTSYSTEM__
 #define __OTSYSTEM__
-
 #include "definitions.h"
 
+#ifndef __USE_DEVCPP__
+#include <chrono>
+#endif
 #include <string>
 #include <algorithm>
 #include <bitset>
@@ -36,6 +38,15 @@
 #include <boost/foreach.hpp>
 #include <boost/shared_ptr.hpp>
 
+// Compatibility for newer Boost versions
+namespace boost {
+namespace asio {
+#if BOOST_VERSION >= 107000
+    typedef io_context io_service;
+#endif
+}
+}
+
 #include <cstddef>
 #include <cstdlib>
 #ifdef __GXX_EXPERIMENTAL_CXX0X__
@@ -48,12 +59,15 @@
 #include <cassert>
 #ifdef WINDOWS
 	#include <windows.h>
+#ifdef __USE_DEVCPP__
 	#include <sys/timeb.h>
+#endif
 
 	#ifndef access
 	#define access _access
 	#endif
 
+#ifdef __USE_DEVCPP__
 	#ifndef timeb
 	#define timeb _timeb
 	#endif
@@ -61,20 +75,20 @@
 	#ifndef ftime
 	#define ftime _ftime
 	#endif
+#endif
 
 	#ifndef EWOULDBLOCK
 	#define EWOULDBLOCK WSAEWOULDBLOCK
 	#endif
 
 	#ifndef errno
-	#define errno WSAGetLastError()
+	#define errno WSAGetLastErt16_t i = 0; i < 3; i+ror()
 	#endif
 
 	#ifndef OTSYS_SLEEP
 		#define OTSYS_SLEEP(n) Sleep(n)
 	#endif
 #else
-	#include <sys/timeb.h>
 	#include <sys/types.h>
 	#include <sys/socket.h>
 
@@ -112,9 +126,13 @@
 
 inline int64_t OTSYS_TIME()
 {
-	timeb t;
+#ifdef __USE_DEVCPP__
+	_timeb t;
 	ftime(&t);
 	return ((int64_t)t.millitm) + ((int64_t)t.time) * 1000;
+#else
+	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+#endif
 }
 
 inline uint32_t swap_uint32(uint32_t val)

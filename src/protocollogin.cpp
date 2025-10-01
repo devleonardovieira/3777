@@ -176,9 +176,9 @@ bool ProtocolLogin::parseFirstPacket(NetworkMessage& msg)
 	IOLoginData::getInstance()->removePremium(account);
 	if(!g_config.getBool(ConfigManager::ACCOUNT_MANAGER) && !account.charList.size() && !castAccount)
 	{
-	//	disconnectClient(0x0A, std::string("This account does not contain any character yet.\nCreate a new character on the "
-	//		+ g_config.getString(ConfigManager::SERVER_NAME) + " website at " + g_config.getString(ConfigManager::URL) + ".").c_str());
-	//	return false;
+		disconnectClient(0x0A, std::string("This account does not contain any character yet.\nCreate a new character on the "
+			+ g_config.getString(ConfigManager::SERVER_NAME) + " website at " + g_config.getString(ConfigManager::URL) + ".").c_str());
+		return false;
 	}
 
 	if(castAccount && !Player::castAutoList.size())
@@ -236,7 +236,7 @@ bool ProtocolLogin::parseFirstPacket(NetworkMessage& msg)
 						output->putString("Offline");
 				}
 				else
-					output->putString(IOLoginData::getInstance()->getPlayerLevelAndVocation((*it)));
+					output->putString(g_config.getString(ConfigManager::SERVER_NAME));
 
 				output->put<uint32_t>(serverIp);
 				output->put<uint16_t>(g_config.getNumber(ConfigManager::GAME_PORT));
@@ -266,7 +266,6 @@ bool ProtocolLogin::parseFirstPacket(NetworkMessage& msg)
 		if(g_config.getBool(ConfigManager::FREE_PREMIUM))
 			output->put<uint16_t>(65535); //client displays free premium
 		else
-            output->putString("Empty");
 			output->put<uint16_t>(account.premiumDays);
 
 		OutputMessagePool::getInstance()->send(output);

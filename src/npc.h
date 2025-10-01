@@ -81,7 +81,7 @@ class NpcEvents
 		virtual void onCreatureSay(const Creature* creature, SpeakClasses, const std::string& text, Position* pos = NULL);
 
 		virtual void onPlayerTrade(const Player* player, int32_t callback, uint16_t itemid,
-			uint16_t count, uint16_t amount, bool ignoreCap, bool inBackpacks);
+			uint8_t count, uint8_t amount, bool ignore, bool inBackpacks);
 		virtual void onPlayerEndTrade(const Player* player);
 		virtual void onPlayerCloseChannel(const Player* player);
 
@@ -213,8 +213,7 @@ struct ListItem
 		keywords = name = pluralName = "";
 	}
 
-	int32_t itemId, subType;
-	uint64_t sellPrice, buyPrice;
+	int32_t sellPrice, buyPrice, itemId, subType;
 	std::string keywords, name, pluralName;
 };
 
@@ -328,10 +327,10 @@ class NpcResponse
 
 struct NpcState
 {
-	bool isIdle, isQueued, ignoreCap, inBackpacks;
-	int32_t topic, price, amount, itemId, subType, level;
+	bool isIdle, isQueued, ignore, inBackpacks;
+	int32_t topic, price, sellPrice, buyPrice, amount, itemId, subType, level;
 	uint32_t respondToCreature;
-	uint64_t prevInteraction, sellPrice, buyPrice;;
+	uint64_t prevInteraction;
 	std::string spellName, listName, listPluralName, respondToText, prevRespondToText;
 	const NpcResponse* lastResponse;
 	ScriptVars scriptVars;
@@ -368,9 +367,6 @@ class Npc : public Creature
 		virtual bool isPushable() const {return false;}
 		virtual bool isAttackable() const {return attackable;}
 		virtual bool isWalkable() const {return walkable;}
-		// Adicione no public:
-		void setName(const std::string& newName) { name = newName; }
-		void setNameDescription(const std::string& newDesc) { nameDescription = newDesc; }
 
 		virtual bool canSee(const Position& pos) const;
 		virtual bool canSeeInvisibility() const {return true;}
@@ -387,8 +383,8 @@ class Npc : public Creature
 		void doMove(Direction dir);
 		void doMoveTo(Position pos);
 
-		void onPlayerTrade(Player* player, ShopEvent_t type, int32_t callback, uint16_t itemId, uint16_t count,
-			uint16_t amount, bool ignoreCap = false, bool inBackpacks = false);
+		void onPlayerTrade(Player* player, ShopEvent_t type, int32_t callback, uint16_t itemId, uint8_t count,
+			uint8_t amount, bool ignore = false, bool inBackpacks = false);
 		void onPlayerEndTrade(Player* player, int32_t buyCallback,
 			int32_t sellCallback);
 		void onPlayerCloseChannel(const Player* player);
@@ -407,8 +403,8 @@ class Npc : public Creature
 		virtual void onCreatureSay(const Creature* creature, SpeakClasses type, const std::string& text, Position* pos = NULL);
 		virtual void onThink(uint32_t interval);
 
-		bool isImmune(CombatType_t) const {return false;}
-		bool isImmune(ConditionType_t) const {return false;}
+		bool isImmune(CombatType_t) const {return true;}
+		bool isImmune(ConditionType_t) const {return true;}
 
 		virtual std::string getDescription(int32_t) const {return nameDescription + ".";}
 		virtual bool getNextStep(Direction& dir, uint32_t& flags);

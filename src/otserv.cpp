@@ -84,6 +84,10 @@ inline void boost::throw_exception(std::exception const & e)
 }
 #endif
 
+#ifdef __USE_DEVCPP__
+#include <signal.h>
+#endif
+
 ConfigManager g_config;
 Game g_game;
 Monsters g_monsters;
@@ -95,6 +99,16 @@ boost::mutex g_loaderLock;
 boost::condition_variable g_loaderSignal;
 boost::unique_lock<boost::mutex> g_loaderUniqueLock(g_loaderLock);
 std::list<std::pair<uint32_t, uint32_t> > serverIps;
+
+#ifdef _WIN32
+BOOL ConsoleHandlerRoutine(DWORD dwCtrlType)
+{
+	Dispatcher::getInstance().addTask(createTask(
+		boost::bind(&Game::setGameState, &g_game, GAMESTATE_SHUTDOWN)));
+	ExitThread(0);
+	return 0;
+}
+#endif
 
 bool argumentsHandler(StringVec args)
 {
@@ -233,6 +247,30 @@ int32_t getch()
 {
 	return (int32_t)getchar();
 }
+
+void signalHandler(int32_t sig)
+{
+	switch(sig)
+	{
+		case SIGBREAK:
+			Dispatcher::getInstance().addTask(createTask(
+				boost::bind(&Game::setGameState, &g_game, GAMESTATE_SHUTDOWN)));
+			break;
+
+		case SIGINT:
+			Dispatcher::getInstance().addTask(createTask(
+				boost::bind(&Game::shutdown, &g_game)));
+			break;
+
+		case SIGTERM:
+			Dispatcher::getInstance().addTask(createTask(
+				boost::bind(&Game::shutdown, &g_game)));
+			break;
+
+		default:
+			break;
+	}
+}
 #endif
 
 void allocationHandler()
@@ -290,6 +328,10 @@ int main(int argc, char* argv[])
 	signal(SIGCONT, signalHandler); //reload all
 	signal(SIGQUIT, signalHandler); //save & shutdown
 	signal(SIGTERM, signalHandler); //shutdown
+#else
+	signal(SIGBREAK, signalHandler); //save & shutdown
+	signal(SIGINT, signalHandler); //shutdown
+	signal(SIGTERM, signalHandler); //shutdown
 #endif
 
 	OutputHandler::getInstance();
@@ -299,6 +341,9 @@ int main(int argc, char* argv[])
 	if(servicer.isRunning())
 	{
 		std::clog << ">> " << g_config.getString(ConfigManager::SERVER_NAME) << " server Online!" << std::endl << std::endl;
+#ifdef _WIN32
+		SetConsoleCtrlHandler((PHANDLER_ROUTINE)ConsoleHandlerRoutine, 1);
+#endif
 		servicer.run();
 	}
 	else
@@ -416,15 +461,15 @@ void otserv(StringVec, ServiceManager* services)
 		SetPriorityClass(GetCurrentProcess(), ABOVE_NORMAL_PRIORITY_CLASS);
 
 #else
-#ifndef MACOS
+#if !defined(MACOS) && !defined(__APPLE__)
 		cpu_set_t mask;
 		CPU_ZERO(&mask);
 		for(IntegerVec::iterator it = cores.begin(); it != cores.end(); ++it)
 			CPU_SET((*it), &mask);
 
 		sched_setaffinity(getpid(), (int32_t)sizeof(mask), &mask);
-	}
 #endif
+	}
 
 	std::string runPath = g_config.getString(ConfigManager::RUNFILE);
 	if(runPath != "" && runPath.length() > 2)
@@ -528,7 +573,6 @@ void otserv(StringVec, ServiceManager* services)
 	std::clog << ">> Loading stash categories" << std::endl;
 	if(!StashCategoryManager::getInstance().loadFromItemTypes())
 		startupErrorMessage("Unable to load stash categories!");
-
 
 	std::clog << ">> Loading chat channels" << std::endl;
 	if(!g_chat.loadFromXml())
@@ -639,7 +683,7 @@ void otserv(StringVec, ServiceManager* services)
 				for(uint8_t** addr = (uint8_t**)host->h_addr_list; addr[0] != NULL; addr++)
 				{
 					uint32_t resolved = swap_uint32(*(uint32_t*)(*addr));
-					if(m_ip.to_v4().to_ulong() == resolved)
+					if(m_ip.to_v4().to_uint() == resolved)
 						continue;
 
 					ipList.push_back(boost::asio::ip::address_v4(resolved));
@@ -655,7 +699,7 @@ void otserv(StringVec, ServiceManager* services)
 		}
 
 		serverIps.push_front(std::make_pair(LOCALHOST, 0xFFFFFFFF));
-		if(m_ip.to_v4().to_ulong() != LOCALHOST)
+		if(m_ip.to_v4().to_uint() != LOCALHOST)
 			ipList.push_back(boost::asio::ip::address_v4(LOCALHOST));
 	}
 	else if(ipList.size() < 2)

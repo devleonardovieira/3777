@@ -40,11 +40,11 @@ bool StashCategoryManager::loadFromItemTypes()
     for (uint16_t itemId = 1; itemId <= 30000; ++itemId) {
         const ItemType& itemType = Item::items.getItemType(itemId);
         
-        // Verificar se o item existe, � stackable e tem uma categoria v�lida
+        // Verificar se o item existe, é stackable e tem uma categoria válida
         if (itemType.id != 0 && itemType.stackable && itemType.stashCategory != STASH_CATEGORY_OTHERS) {
             StashCategory_t category = static_cast<StashCategory_t>(itemType.stashCategory);
             
-            // Validar se a categoria � v�lida
+            // Validar se a categoria é válida
             if (isValidCategory(category)) {
                 itemCategories[itemId] = category;
                 categorizedItems[category].push_back(itemId);
@@ -64,7 +64,7 @@ StashCategory_t StashCategoryManager::getItemCategory(uint16_t itemId) const
     if (it != itemCategories.end()) {
         return it->second;
     }
-    return STASH_CATEGORY_OTHERS; // Categoria padr�o para itens n�o categorizados
+    return STASH_CATEGORY_OTHERS; // Categoria padrão para itens não categorizados
 }
 
 std::string StashCategoryManager::getCategoryName(StashCategory_t category) const

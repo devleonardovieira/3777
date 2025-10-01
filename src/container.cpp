@@ -330,7 +330,7 @@ ReturnValue Container::__queryMaxCount(int32_t index, const Thing* thing, uint32
 			{
 				if((*cit) != item && (*cit)->getID() == item->getID() && (*cit)->getItemCount() < 100)
 				{
-					uint32_t remainder = (5000 - (*cit)->getItemCount());
+					uint32_t remainder = (100 - (*cit)->getItemCount());
 					if(__queryAdd(slotIndex, item, remainder, flags) == RET_NOERROR)
 						n += remainder;
 				}
@@ -343,15 +343,15 @@ ReturnValue Container::__queryMaxCount(int32_t index, const Thing* thing, uint32
 			if(destThing)
 				destItem = destThing->getItem();
 
-			if(destItem && destItem->getID() == item->getID() && destItem->getItemCount() < 5000)
+			if(destItem && destItem->getID() == item->getID() && destItem->getItemCount() < 100)
 			{
-				uint32_t remainder = 5000 - destItem->getItemCount();
+				uint32_t remainder = 100 - destItem->getItemCount();
 				if(__queryAdd(index, item, remainder, flags) == RET_NOERROR)
 					n = remainder;
 			}
 		}
 
-		maxQueryCount = freeSlots * 5000 + n;
+		maxQueryCount = freeSlots * 100 + n;
 		if(maxQueryCount < count)
 			return RET_CONTAINERNOTENOUGHROOM;
 	}
@@ -429,7 +429,7 @@ Cylinder* Container::__queryDestination(int32_t& index, const Thing* thing, Item
 		uint32_t n = itemlist.size();
 		for(ItemList::reverse_iterator cit = itemlist.rbegin(); cit != itemlist.rend(); ++cit, --n)
 		{
-			if((*cit)->getID() == item->getID() && (*cit)->getItemCount() < 5000)
+			if((*cit)->getID() == item->getID() && (*cit)->getItemCount() < 100)
 			{
 				*destItem = (*cit);
 				index = n;
@@ -479,7 +479,8 @@ void Container::__addThing(Creature* actor, int32_t index, Thing* thing)
 		return /*RET_NOTPOSSIBLE*/;
 	}
 
-	if(getID() == 48604)
+	// Check if this container is a stash container (itemid 1995 - blue bag)
+	if(getID() == 1995)
 	{
 		Player* player = NULL;
 		
@@ -531,8 +532,6 @@ void Container::__addThing(Creature* actor, int32_t index, Thing* thing)
 			}
 		}
 	}
-
-
 
 #ifdef __DEBUG_MOVESYS__
 	if(index != INDEX_WHEREEVER && size() >= capacity())

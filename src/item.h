@@ -111,27 +111,6 @@ enum AttrTypes_t
 	ATTR_ARTICLE = 41,
 	ATTR_SCRIPTPROTECTED = 42,
 	ATTR_DUALWIELD = 43,
-	ATTR_EXTRA1 = 44,
-	ATTR_EXTRA2 = 45,
-	ATTR_EXTRA3 = 46,
-	ATTR_EXTRA4 = 47,
-	ATTR_EXTRA5 = 48,
-	ATTR_EXTRA6 = 49,
-	ATTR_EXTRA7 = 50,
-	ATTR_EXTRA8 = 51,
-	ATTR_EXTRA9 = 52,
-	ATTR_EXTRA10 = 53,
-	ATTR_EXTRA11 = 54,
-	ATTR_EXTRA12 = 55,
-	ATTR_EXTRA13 = 56,
-	ATTR_EXTRA14 = 57,
-	ATTR_EXTRA15 = 58,
-	ATTR_EXTRA16 = 59,
-	ATTR_EXTRA17 = 60,
-	ATTR_EXTRA18 = 61,
-	ATTR_EXTRA19 = 62,
-	ATTR_EXTRA20 = 63,
-	
 	ATTR_ATTRIBUTE_MAP = 128
 };
 
@@ -288,7 +267,7 @@ class Item : virtual public Thing, public ItemAttributes
 		void getLight(LightInfo& lightInfo);
 
 		int32_t getMaxWriteLength() const {return items[id].maxTextLen;}
-		int64_t getWorth() const {return getItemCount() * items[id].worth;}
+		int32_t getWorth() const {return getItemCount() * items[id].worth;}
 		virtual int32_t getThrowRange() const {return (isPickupable() ? 15 : 2);}
 
 		bool floorChange(FloorChange_t change = CHANGE_NONE) const;
@@ -357,7 +336,7 @@ class Item : virtual public Thing, public ItemAttributes
 
 	protected:
 		uint16_t id;
-		uint16_t count;
+		uint8_t count;
 
 		Raid* raid;
 		bool loadedFromMap;

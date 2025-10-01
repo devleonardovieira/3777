@@ -354,8 +354,8 @@ ReturnValue Combat::canTargetCreature(const Player* player, const Creature* targ
 
 	if(target->getPlayer() && !Combat::isInPvpZone(player, target) && player->getSkullType(target->getPlayer()) == SKULL_NONE)
 	{
-		//if(player->getSecureMode() == SECUREMODE_ON)
-			//return RET_TURNSECUREMODETOATTACKUNMARKEDPLAYERS;
+		if(player->getSecureMode() == SECUREMODE_ON)
+			return RET_TURNSECUREMODETOATTACKUNMARKEDPLAYERS;
 
 		if(player->getSkull() == SKULL_BLACK)
 			return RET_YOUMAYNOTATTACKTHISPLAYER;

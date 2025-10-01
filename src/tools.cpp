@@ -289,7 +289,7 @@ bool parseXMLContentString(xmlNodePtr node, std::string& value)
 std::string getLastXMLError()
 {
 	std::stringstream ss;
-	xmlErrorPtr lastError = xmlGetLastError();
+	const xmlError* lastError = xmlGetLastError();
 	if(lastError->line)
 		ss << "Line: " << lastError->line << ", ";
 
@@ -350,15 +350,6 @@ IntegerVec vectorAtoi(StringVec stringVector)
 bool hasBitSet(uint32_t flag, uint32_t flags)
 {
 	return ((flags & flag) == flag);
-}
-
-int32_t round(float v)
-{
-	int32_t t = (int32_t)std::floor(v);
-	if((v - t) > 0.5)
-		return t + 1;
-
-	return t;
 }
 
 uint32_t rand24b()
@@ -667,12 +658,9 @@ std::string formatDateEx(time_t _time/* = 0*/, std::string format/* = "%d %b %Y,
 	return buffer;
 }
 
-std::string formatTime(time_t _time/* = 0*/, bool ms/* = false*/)
+std::string currentTimeString()
 {
-	if(!_time)
-		_time = time(NULL);
-	else if(ms)
-		ms = false;
+	time_t _time = time(NULL);
 
 	const tm* tms = localtime(&_time);
 	std::stringstream s;
@@ -683,20 +671,6 @@ std::string formatTime(time_t _time/* = 0*/, bool ms/* = false*/)
 			s << "0";
 
 		s << tms->tm_sec;
-		if(ms)
-		{
-			timeb t;
-			ftime(&t);
-
-			s << "."; // make it format zzz
-			if(t.millitm < 10)
-				s << "0";
-
-			if(t.millitm < 100)
-				s << "0";
-
-			s << t.millitm;
-		}
 	}
 	else
 		s << "UNIX Time: " << (int32_t)_time;
@@ -714,208 +688,6 @@ std::string convertIPAddress(uint32_t ip)
 Skulls_t getSkulls(std::string strValue)
 {
 	std::string tmpStrValue = asLowerCaseString(strValue);
-	if(tmpStrValue == "SKULL_1" || tmpStrValue == "6")
-		return SKULL_1;
-	if(tmpStrValue == "SKULL_2" || tmpStrValue == "7")
-		return SKULL_2;
-	if(tmpStrValue == "SKULL_3" || tmpStrValue == "8")
-		return SKULL_3;
-	if(tmpStrValue == "SKULL_4" || tmpStrValue == "9")
-		return SKULL_4;
-	if(tmpStrValue == "SKULL_5" || tmpStrValue == "10")
-		return SKULL_5;
-	if(tmpStrValue == "SKULL_6" || tmpStrValue == "11")
-		return SKULL_6;
-	if(tmpStrValue == "SKULL_7" || tmpStrValue == "12")
-		return SKULL_7;
-	if(tmpStrValue == "SKULL_8" || tmpStrValue == "13")
-		return SKULL_8;
-	if(tmpStrValue == "SKULL_9" || tmpStrValue == "14")
-		return SKULL_9;
-	if(tmpStrValue == "SKULL_10" || tmpStrValue == "15")
-		return SKULL_10;
-	if(tmpStrValue == "SKULL_11" || tmpStrValue == "16")
-		return SKULL_11;
-	if(tmpStrValue == "SKULL_12" || tmpStrValue == "17")
-		return SKULL_12;
-	if(tmpStrValue == "SKULL_13" || tmpStrValue == "18")
-		return SKULL_13;
-	if(tmpStrValue == "SKULL_14" || tmpStrValue == "19")
-		return SKULL_14;
-	if(tmpStrValue == "SKULL_15" || tmpStrValue == "20")
-		return SKULL_15;
-	if(tmpStrValue == "SKULL_16" || tmpStrValue == "21")
-		return SKULL_16;
-	if(tmpStrValue == "SKULL_17" || tmpStrValue == "22")
-		return SKULL_17;
-	if(tmpStrValue == "SKULL_18" || tmpStrValue == "23")
-		return SKULL_18;
-	if(tmpStrValue == "SKULL_19" || tmpStrValue == "24")
-		return SKULL_19;
-	if(tmpStrValue == "SKULL_20" || tmpStrValue == "25")
-		return SKULL_20;
-	if(tmpStrValue == "SKULL_21" || tmpStrValue == "26")
-		return SKULL_21;
-	if(tmpStrValue == "SKULL_22" || tmpStrValue == "27")
-		return SKULL_22;
-	if(tmpStrValue == "SKULL_23" || tmpStrValue == "28")
-		return SKULL_23;
-	if(tmpStrValue == "SKULL_24" || tmpStrValue == "29")
-		return SKULL_24;
-	if(tmpStrValue == "SKULL_25" || tmpStrValue == "30")
-		return SKULL_25;
-	if(tmpStrValue == "SKULL_26" || tmpStrValue == "31")
-		return SKULL_26;
-	if(tmpStrValue == "SKULL_27" || tmpStrValue == "32")
-		return SKULL_27;
-	if(tmpStrValue == "SKULL_28" || tmpStrValue == "33")
-		return SKULL_28;
-	if(tmpStrValue == "SKULL_29" || tmpStrValue == "34")
-		return SKULL_29;
-	if(tmpStrValue == "SKULL_30" || tmpStrValue == "35")
-		return SKULL_30;
-	if(tmpStrValue == "SKULL_31" || tmpStrValue == "36")
-		return SKULL_31;
-	if(tmpStrValue == "SKULL_32" || tmpStrValue == "37")
-		return SKULL_32;
-	if(tmpStrValue == "SKULL_33" || tmpStrValue == "38")
-		return SKULL_33;
-	if(tmpStrValue == "SKULL_34" || tmpStrValue == "39")
-		return SKULL_34;
-	if(tmpStrValue == "SKULL_35" || tmpStrValue == "40")
-		return SKULL_35;
-	if(tmpStrValue == "SKULL_36" || tmpStrValue == "41")
-		return SKULL_36;
-	if(tmpStrValue == "SKULL_37" || tmpStrValue == "42")
-		return SKULL_37;
-	if(tmpStrValue == "SKULL_38" || tmpStrValue == "43")
-		return SKULL_38;
-	if(tmpStrValue == "SKULL_39" || tmpStrValue == "44")
-		return SKULL_39;
-	if(tmpStrValue == "SKULL_40" || tmpStrValue == "45")
-		return SKULL_40;
-	if(tmpStrValue == "SKULL_41" || tmpStrValue == "46")
-		return SKULL_41;
-	if(tmpStrValue == "SKULL_42" || tmpStrValue == "47")
-		return SKULL_42;
-	if(tmpStrValue == "SKULL_43" || tmpStrValue == "48")
-		return SKULL_43;
-	if(tmpStrValue == "SKULL_44" || tmpStrValue == "49")
-		return SKULL_44;
-	if(tmpStrValue == "SKULL_45" || tmpStrValue == "50")
-		return SKULL_45;
-	if(tmpStrValue == "SKULL_46" || tmpStrValue == "51")
-		return SKULL_46;
-	if(tmpStrValue == "SKULL_47" || tmpStrValue == "52")
-		return SKULL_47;
-	if(tmpStrValue == "SKULL_48" || tmpStrValue == "53")
-		return SKULL_48;
-	if(tmpStrValue == "SKULL_49" || tmpStrValue == "54")
-		return SKULL_49;
-	if(tmpStrValue == "SKULL_50" || tmpStrValue == "55")
-		return SKULL_50;
-	if(tmpStrValue == "SKULL_51" || tmpStrValue == "56")
-		return SKULL_51;
-	if(tmpStrValue == "SKULL_52" || tmpStrValue == "57")
-		return SKULL_52;
-	if(tmpStrValue == "SKULL_53" || tmpStrValue == "58")
-		return SKULL_53;
-	if(tmpStrValue == "SKULL_54" || tmpStrValue == "59")
-		return SKULL_54;
-	if(tmpStrValue == "SKULL_55" || tmpStrValue == "60")
-		return SKULL_55;
-	if(tmpStrValue == "SKULL_56" || tmpStrValue == "61")
-		return SKULL_56;
-	if(tmpStrValue == "SKULL_57" || tmpStrValue == "62")
-		return SKULL_57;
-	if(tmpStrValue == "SKULL_58" || tmpStrValue == "63")
-		return SKULL_58;
-	if(tmpStrValue == "SKULL_59" || tmpStrValue == "64")
-		return SKULL_59;
-	if(tmpStrValue == "SKULL_60" || tmpStrValue == "65")
-		return SKULL_60;
-	if(tmpStrValue == "SKULL_61" || tmpStrValue == "66")
-		return SKULL_61;
-	if(tmpStrValue == "SKULL_62" || tmpStrValue == "67")
-		return SKULL_62;
-	if(tmpStrValue == "SKULL_63" || tmpStrValue == "68")
-		return SKULL_63;
-	if(tmpStrValue == "SKULL_64" || tmpStrValue == "69")
-		return SKULL_64;
-	if(tmpStrValue == "SKULL_65" || tmpStrValue == "70")
-		return SKULL_65;
-	if(tmpStrValue == "SKULL_66" || tmpStrValue == "71")
-		return SKULL_66;
-	if(tmpStrValue == "SKULL_67" || tmpStrValue == "72")
-		return SKULL_67;
-	if(tmpStrValue == "SKULL_68" || tmpStrValue == "73")
-		return SKULL_68;
-	if(tmpStrValue == "SKULL_69" || tmpStrValue == "74")
-		return SKULL_69;
-	if(tmpStrValue == "SKULL_70" || tmpStrValue == "75")
-		return SKULL_70;
-	if(tmpStrValue == "SKULL_71" || tmpStrValue == "76")
-		return SKULL_71;
-	if(tmpStrValue == "SKULL_72" || tmpStrValue == "77")
-		return SKULL_72;
-	if(tmpStrValue == "SKULL_73" || tmpStrValue == "78")
-		return SKULL_73;
-	if(tmpStrValue == "SKULL_74" || tmpStrValue == "79")
-		return SKULL_74;
-	if(tmpStrValue == "SKULL_75" || tmpStrValue == "80")
-		return SKULL_75;
-	if(tmpStrValue == "SKULL_76" || tmpStrValue == "81")
-		return SKULL_76;
-	if(tmpStrValue == "SKULL_77" || tmpStrValue == "82")
-		return SKULL_77;
-	if(tmpStrValue == "SKULL_78" || tmpStrValue == "83")
-		return SKULL_78;
-	if(tmpStrValue == "SKULL_79" || tmpStrValue == "84")
-		return SKULL_79;
-	if(tmpStrValue == "SKULL_80" || tmpStrValue == "85")
-		return SKULL_80;
-	if(tmpStrValue == "SKULL_81" || tmpStrValue == "86")
-		return SKULL_81;
-	if(tmpStrValue == "SKULL_82" || tmpStrValue == "87")
-		return SKULL_82;
-	if(tmpStrValue == "SKULL_83" || tmpStrValue == "88")
-		return SKULL_83;
-	if(tmpStrValue == "SKULL_84" || tmpStrValue == "89")
-		return SKULL_84;
-	if(tmpStrValue == "SKULL_85" || tmpStrValue == "90")
-		return SKULL_85;
-	if(tmpStrValue == "SKULL_86" || tmpStrValue == "91")
-		return SKULL_86;
-	if(tmpStrValue == "SKULL_87" || tmpStrValue == "92")
-		return SKULL_87;
-	if(tmpStrValue == "SKULL_88" || tmpStrValue == "93")
-		return SKULL_88;
-	if(tmpStrValue == "SKULL_89" || tmpStrValue == "94")
-		return SKULL_89;
-	if(tmpStrValue == "SKULL_90" || tmpStrValue == "95")
-		return SKULL_90;
-	if(tmpStrValue == "SKULL_91" || tmpStrValue == "96")
-		return SKULL_91;
-	if(tmpStrValue == "SKULL_92" || tmpStrValue == "97")
-		return SKULL_92;
-	if(tmpStrValue == "SKULL_93" || tmpStrValue == "98")
-		return SKULL_93;
-	if(tmpStrValue == "SKULL_94" || tmpStrValue == "99")
-		return SKULL_94;
-	if(tmpStrValue == "SKULL_95" || tmpStrValue == "100")
-		return SKULL_95;
-	if(tmpStrValue == "SKULL_96" || tmpStrValue == "101")
-		return SKULL_96;
-	if(tmpStrValue == "SKULL_97" || tmpStrValue == "102")
-		return SKULL_97;
-	if(tmpStrValue == "SKULL_98" || tmpStrValue == "103")
-		return SKULL_98;
-	if(tmpStrValue == "SKULL_99" || tmpStrValue == "104")
-		return SKULL_99;
-	if(tmpStrValue == "SKULL_100" || tmpStrValue == "105")
-		return SKULL_100;
-
-
 	if(tmpStrValue == "black" || tmpStrValue == "5")
 		return SKULL_BLACK;
 
@@ -984,8 +756,6 @@ GuildEmblems_t getEmblems(std::string strValue)
 
 	return EMBLEM_NONE;
 }
-
-
 
 Direction getDirection(std::string string)
 {
@@ -1227,194 +997,7 @@ MagicEffectNames magicEffectNames[] =
 	{"bats",		MAGIC_EFFECT_BATS},
 	{"smoke",		MAGIC_EFFECT_SMOKE},
 	{"insects",		MAGIC_EFFECT_INSECTS},
-		{"efeito70",	MAGIC_EFFECT_EFEITO70},
-    {"efeito71",        MAGIC_EFFECT_EFEITO71},
-    {"efeito72",        MAGIC_EFFECT_EFEITO72},
-    {"efeito73",        MAGIC_EFFECT_EFEITO73},
-    {"efeito74",        MAGIC_EFFECT_EFEITO74},
-    {"efeito75",        MAGIC_EFFECT_EFEITO75},
-    {"efeito76",        MAGIC_EFFECT_EFEITO76},
-    {"efeito77",        MAGIC_EFFECT_EFEITO77},
-    {"efeito78",        MAGIC_EFFECT_EFEITO78},
-    {"efeito79",        MAGIC_EFFECT_EFEITO79},
-    {"efeito80",        MAGIC_EFFECT_EFEITO80},
-    {"efeito81",        MAGIC_EFFECT_EFEITO81},
-    {"efeito82",        MAGIC_EFFECT_EFEITO82},
-    {"efeito83",        MAGIC_EFFECT_EFEITO83},
-    {"efeito84",        MAGIC_EFFECT_EFEITO84},
-    {"efeito85",        MAGIC_EFFECT_EFEITO85},
-    {"efeito86",        MAGIC_EFFECT_EFEITO86},
-    {"efeito87",        MAGIC_EFFECT_EFEITO87},
-    {"efeito88",        MAGIC_EFFECT_EFEITO88},
-    {"efeito89",        MAGIC_EFFECT_EFEITO89},
-    {"efeito90",        MAGIC_EFFECT_EFEITO90},
-    {"efeito91",        MAGIC_EFFECT_EFEITO91},
-    {"efeito92",        MAGIC_EFFECT_EFEITO92},
-    {"efeito93",        MAGIC_EFFECT_EFEITO93},
-    {"efeito94",        MAGIC_EFFECT_EFEITO94},
-    {"efeito95",        MAGIC_EFFECT_EFEITO95},
-    {"efeito96",        MAGIC_EFFECT_EFEITO96},
-    {"efeito97",        MAGIC_EFFECT_EFEITO97},
-    {"efeito98",        MAGIC_EFFECT_EFEITO98},
-    {"efeito99",        MAGIC_EFFECT_EFEITO99},
-    {"efeito100",        MAGIC_EFFECT_EFEITO100},
-    {"efeito101",        MAGIC_EFFECT_EFEITO101},
-    {"efeito102",        MAGIC_EFFECT_EFEITO102},
-    {"efeito103",        MAGIC_EFFECT_EFEITO103},
-    {"efeito104",        MAGIC_EFFECT_EFEITO104},
-    {"efeito105",        MAGIC_EFFECT_EFEITO105},
-    {"efeito106",        MAGIC_EFFECT_EFEITO106},
-    {"efeito107",        MAGIC_EFFECT_EFEITO107},
-    {"efeito108",        MAGIC_EFFECT_EFEITO108},
-    {"efeito109",        MAGIC_EFFECT_EFEITO109},
-    {"efeito110",        MAGIC_EFFECT_EFEITO110},
-    {"efeito111",        MAGIC_EFFECT_EFEITO111},
-    {"efeito112",        MAGIC_EFFECT_EFEITO112},
-    {"efeito113",        MAGIC_EFFECT_EFEITO113},
-    {"efeito114",        MAGIC_EFFECT_EFEITO114},
-    {"efeito115",        MAGIC_EFFECT_EFEITO115},
-    {"efeito116",        MAGIC_EFFECT_EFEITO116},
-    {"efeito117",        MAGIC_EFFECT_EFEITO117},
-    {"efeito118",        MAGIC_EFFECT_EFEITO118},
-    {"efeito119",        MAGIC_EFFECT_EFEITO119},
-    {"efeito120",        MAGIC_EFFECT_EFEITO120},
-    {"efeito121",        MAGIC_EFFECT_EFEITO121},
-    {"efeito122",        MAGIC_EFFECT_EFEITO122},
-    {"efeito123",        MAGIC_EFFECT_EFEITO123},
-    {"efeito124",        MAGIC_EFFECT_EFEITO124},
-    {"efeito125",        MAGIC_EFFECT_EFEITO125},
-    {"efeito126",        MAGIC_EFFECT_EFEITO126},
-    {"efeito127",        MAGIC_EFFECT_EFEITO127},
-    {"efeito128",        MAGIC_EFFECT_EFEITO128},
-    {"efeito129",        MAGIC_EFFECT_EFEITO129},
-    {"efeito130",        MAGIC_EFFECT_EFEITO130},
-    {"efeito131",        MAGIC_EFFECT_EFEITO131},
-    {"efeito132",        MAGIC_EFFECT_EFEITO132},
-    {"efeito133",        MAGIC_EFFECT_EFEITO133},
-    {"efeito134",        MAGIC_EFFECT_EFEITO134},
-    {"efeito135",        MAGIC_EFFECT_EFEITO135},
-    {"efeito136",        MAGIC_EFFECT_EFEITO136},
-    {"efeito137",        MAGIC_EFFECT_EFEITO137},
-    {"efeito138",        MAGIC_EFFECT_EFEITO138},
-    {"efeito139",        MAGIC_EFFECT_EFEITO139},
-    {"efeito140",        MAGIC_EFFECT_EFEITO140},
-    {"efeito141",        MAGIC_EFFECT_EFEITO141},
-    {"efeito142",        MAGIC_EFFECT_EFEITO142},
-    {"efeito143",        MAGIC_EFFECT_EFEITO143},
-    {"efeito144",        MAGIC_EFFECT_EFEITO144},
-    {"efeito145",        MAGIC_EFFECT_EFEITO145},
-    {"efeito146",        MAGIC_EFFECT_EFEITO146},
-    {"efeito147",        MAGIC_EFFECT_EFEITO147},
-    {"efeito148",        MAGIC_EFFECT_EFEITO148},
-    {"efeito149",        MAGIC_EFFECT_EFEITO149},
-    {"efeito150",        MAGIC_EFFECT_EFEITO150},
-    {"efeito151",        MAGIC_EFFECT_EFEITO151},
-    {"efeito152",        MAGIC_EFFECT_EFEITO152},
-    {"efeito153",        MAGIC_EFFECT_EFEITO153},
-    {"efeito154",        MAGIC_EFFECT_EFEITO154},
-    {"efeito155",        MAGIC_EFFECT_EFEITO155},
-    {"efeito156",        MAGIC_EFFECT_EFEITO156},
-    {"efeito157",        MAGIC_EFFECT_EFEITO157},
-    {"efeito158",        MAGIC_EFFECT_EFEITO158},
-    {"efeito159",        MAGIC_EFFECT_EFEITO159},
-    {"efeito160",        MAGIC_EFFECT_EFEITO160},
-    {"efeito161",        MAGIC_EFFECT_EFEITO161},
-    {"efeito162",        MAGIC_EFFECT_EFEITO162},
-    {"efeito163",        MAGIC_EFFECT_EFEITO163},
-    {"efeito164",        MAGIC_EFFECT_EFEITO164},
-    {"efeito165",        MAGIC_EFFECT_EFEITO165},
-    {"efeito166",        MAGIC_EFFECT_EFEITO166},
-    {"efeito167",        MAGIC_EFFECT_EFEITO167},
-    {"efeito168",        MAGIC_EFFECT_EFEITO168},
-    {"efeito169",        MAGIC_EFFECT_EFEITO169},
-    {"efeito170",        MAGIC_EFFECT_EFEITO170},
-    {"efeito171",        MAGIC_EFFECT_EFEITO171},
-    {"efeito172",        MAGIC_EFFECT_EFEITO172},
-    {"efeito173",        MAGIC_EFFECT_EFEITO173},
-    {"efeito174",        MAGIC_EFFECT_EFEITO174},
-    {"efeito175",        MAGIC_EFFECT_EFEITO175},
-    {"efeito176",        MAGIC_EFFECT_EFEITO176},
-    {"efeito177",        MAGIC_EFFECT_EFEITO177},
-    {"efeito178",        MAGIC_EFFECT_EFEITO178},
-    {"efeito179",        MAGIC_EFFECT_EFEITO179},
-    {"efeito180",        MAGIC_EFFECT_EFEITO180},
-    {"efeito181",        MAGIC_EFFECT_EFEITO181},
-    {"efeito182",        MAGIC_EFFECT_EFEITO182},
-    {"efeito183",        MAGIC_EFFECT_EFEITO183},
-    {"efeito184",        MAGIC_EFFECT_EFEITO184},
-    {"efeito185",        MAGIC_EFFECT_EFEITO185},
-    {"efeito186",        MAGIC_EFFECT_EFEITO186},
-    {"efeito187",        MAGIC_EFFECT_EFEITO187},
-    {"efeito188",        MAGIC_EFFECT_EFEITO188},
-    {"efeito189",        MAGIC_EFFECT_EFEITO189},
-    {"efeito190",        MAGIC_EFFECT_EFEITO190},
-    {"efeito191",        MAGIC_EFFECT_EFEITO191},
-    {"efeito192",        MAGIC_EFFECT_EFEITO192},
-    {"efeito193",        MAGIC_EFFECT_EFEITO193},
-    {"efeito194",        MAGIC_EFFECT_EFEITO194},
-    {"efeito195",        MAGIC_EFFECT_EFEITO195},
-    {"efeito196",        MAGIC_EFFECT_EFEITO196},
-    {"efeito197",        MAGIC_EFFECT_EFEITO197},
-    {"efeito198",        MAGIC_EFFECT_EFEITO198},
-    {"efeito199",        MAGIC_EFFECT_EFEITO199},
-    {"efeito200",        MAGIC_EFFECT_EFEITO200},
-    {"efeito201",        MAGIC_EFFECT_EFEITO201},
-    {"efeito202",        MAGIC_EFFECT_EFEITO202},
-    {"efeito203",        MAGIC_EFFECT_EFEITO203},
-    {"efeito204",        MAGIC_EFFECT_EFEITO204},
-    {"efeito205",        MAGIC_EFFECT_EFEITO205},
-    {"efeito206",        MAGIC_EFFECT_EFEITO206},
-    {"efeito207",        MAGIC_EFFECT_EFEITO207},
-    {"efeito208",        MAGIC_EFFECT_EFEITO208},
-    {"efeito209",        MAGIC_EFFECT_EFEITO209},
-    {"efeito210",        MAGIC_EFFECT_EFEITO210},
-    {"efeito211",        MAGIC_EFFECT_EFEITO211},
-    {"efeito212",        MAGIC_EFFECT_EFEITO212},
-    {"efeito213",        MAGIC_EFFECT_EFEITO213},
-    {"efeito214",        MAGIC_EFFECT_EFEITO214},
-    {"efeito215",        MAGIC_EFFECT_EFEITO215},
-    {"efeito216",        MAGIC_EFFECT_EFEITO216},
-    {"efeito217",        MAGIC_EFFECT_EFEITO217},
-    {"efeito218",        MAGIC_EFFECT_EFEITO218},
-    {"efeito219",        MAGIC_EFFECT_EFEITO219},
-    {"efeito220",        MAGIC_EFFECT_EFEITO220},
-    {"efeito221",        MAGIC_EFFECT_EFEITO221},
-    {"efeito222",        MAGIC_EFFECT_EFEITO222},
-    {"efeito223",        MAGIC_EFFECT_EFEITO223},
-    {"efeito224",        MAGIC_EFFECT_EFEITO224},
-    {"efeito225",        MAGIC_EFFECT_EFEITO225},
-    {"efeito226",        MAGIC_EFFECT_EFEITO226},
-    {"efeito227",        MAGIC_EFFECT_EFEITO227},
-    {"efeito228",        MAGIC_EFFECT_EFEITO228},
-    {"efeito229",        MAGIC_EFFECT_EFEITO229},
-    {"efeito230",        MAGIC_EFFECT_EFEITO230},
-    {"efeito231",        MAGIC_EFFECT_EFEITO231},
-    {"efeito232",        MAGIC_EFFECT_EFEITO232},
-    {"efeito233",        MAGIC_EFFECT_EFEITO233},
-    {"efeito234",        MAGIC_EFFECT_EFEITO234},
-    {"efeito235",        MAGIC_EFFECT_EFEITO235},
-    {"efeito236",        MAGIC_EFFECT_EFEITO236},
-    {"efeito237",        MAGIC_EFFECT_EFEITO237},
-    {"efeito238",        MAGIC_EFFECT_EFEITO238},
-    {"efeito239",        MAGIC_EFFECT_EFEITO239},
-    {"efeito240",        MAGIC_EFFECT_EFEITO240},
-    {"efeito241",        MAGIC_EFFECT_EFEITO241},
-    {"efeito242",        MAGIC_EFFECT_EFEITO242},
-    {"efeito243",        MAGIC_EFFECT_EFEITO243},
-    {"efeito244",        MAGIC_EFFECT_EFEITO244},
-    {"efeito245",        MAGIC_EFFECT_EFEITO245},
-    {"efeito246",        MAGIC_EFFECT_EFEITO246},
-    {"efeito247",        MAGIC_EFFECT_EFEITO247},
-    {"efeito248",        MAGIC_EFFECT_EFEITO248},
-    {"efeito249",        MAGIC_EFFECT_EFEITO249},
-    {"efeito250",        MAGIC_EFFECT_EFEITO250},
-    {"efeito251",        MAGIC_EFFECT_EFEITO251},
-    {"efeito252",        MAGIC_EFFECT_EFEITO252},
-    {"efeito253",        MAGIC_EFFECT_EFEITO253},
-    {"efeito254",        MAGIC_EFFECT_EFEITO254},
-    {"efeito255",        MAGIC_EFFECT_EFEITO255},
-    {"semfim",        MAGIC_EFFECT_SEMFIM}
-	
+	{"dragonhead",	MAGIC_EFFECT_DRAGONHEAD}
 };
 
 ShootTypeNames shootTypeNames[] =
@@ -1461,8 +1044,7 @@ ShootTypeNames shootTypeNames[] =
 	{"smallearth",		SHOOT_EFFECT_SMALLEARTH},
 	{"eartharrow",		SHOOT_EFFECT_EARTHARROW},
 	{"explosion",		SHOOT_EFFECT_EXPLOSION},
-	{"cake",		SHOOT_EFFECT_CAKE},
-	{"semfim",		SHOOT_EFFECT_SEMFIM}
+	{"cake",		SHOOT_EFFECT_CAKE}
 };
 
 CombatTypeNames combatTypeNames[] =
@@ -1683,33 +1265,33 @@ std::string getSkillName(uint16_t skillId, bool suffix/* = true*/)
 	{
 		case SKILL_FIST:
 		{
-			std::string tmp = "taijutsu";
+			std::string tmp = "fist";
 			if(suffix)
-				tmp += "";
+				tmp += " fighting";
 
 			return tmp;
 		}
 		case SKILL_CLUB:
 		{
-			std::string tmp = "ninjutsu";
+			std::string tmp = "club";
 			if(suffix)
-				tmp += "";
+				tmp += " fighting";
 
 			return tmp;
 		}
 		case SKILL_SWORD:
 		{
-			std::string tmp = "weapon";
+			std::string tmp = "sword";
 			if(suffix)
-				tmp += "";
+				tmp += " fighting";
 
 			return tmp;
 		}
 		case SKILL_AXE:
 		{
-			std::string tmp = "doujutsu";
+			std::string tmp = "axe";
 			if(suffix)
-				tmp += "";
+				tmp += " fighting";
 
 			return tmp;
 		}
@@ -1722,11 +1304,11 @@ std::string getSkillName(uint16_t skillId, bool suffix/* = true*/)
 			return tmp;
 		}
 		case SKILL_SHIELD:
-			return "defense";
+			return "shielding";
 		case SKILL_FISH:
-			return "attackspeed";
+			return "fishing";
 		case SKILL__MAGLEVEL:
-			return "chakra level";
+			return "magic level";
 		case SKILL__LEVEL:
 			return "level";
 		default:

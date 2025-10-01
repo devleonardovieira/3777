@@ -518,20 +518,13 @@ ReturnValue Tile::__queryAdd(int32_t, const Thing* thing, uint32_t,
 		if(!ground)
 			return RET_NOTPOSSIBLE;
 
-if(const Monster* monster = creature->getMonster())
-   {
-if(hasFlag(TILESTATE_PROTECTIONZONE) && !monster->isPlayerSummon())
-   {
-if(creature->isPlayerSummon())
-   {
-if(hasFlag(TILESTATE_BLOCKSOLID))
-    return RET_NOTPOSSIBLE;
-   }
-   return RET_NOTPOSSIBLE;
-   }
+		if(const Monster* monster = creature->getMonster())
+		{
+			if(hasFlag(TILESTATE_PROTECTIONZONE))
+				return RET_NOTPOSSIBLE;
 
-   if(floorChange() || positionChange())
-    return RET_NOTPOSSIBLE;
+			if(floorChange() || positionChange())
+				return RET_NOTPOSSIBLE;
 
 			if(monster->canPushCreatures() && !monster->isSummon())
 			{

@@ -88,7 +88,7 @@ class ProtocolGame : public Protocol
 		void publicSendCreatePrivateChannel(uint16_t channelId, const std::string& channelName) { //lastAdded
 			sendCreatePrivateChannel(channelId, channelName);
 		}
-
+		
 		// Stash send functions (public)
 		void sendOpenStash();
 		void sendStashItems();
@@ -187,6 +187,7 @@ class ProtocolGame : public Protocol
 		void parseCloseRuleViolation(NetworkMessage& msg);
 		void parseCancelRuleViolation(NetworkMessage& msg);
 
+		// Stash functions
 		void parseStashWithdraw(NetworkMessage& msg);
 		void parseStashFilter(NetworkMessage& msg);
 
@@ -205,8 +206,8 @@ class ProtocolGame : public Protocol
 		void sendIcons(int32_t icons);
 		void sendFYIBox(const std::string& message);
 
-		void sendDistanceShoot(const Position& from, const Position& to, uint16_t type);
-		void sendMagicEffect(const Position& pos, uint16_t type);
+		void sendDistanceShoot(const Position& from, const Position& to, uint8_t type);
+		void sendMagicEffect(const Position& pos, uint8_t type);
 		void sendAnimatedText(const Position& pos, uint8_t color, std::string text);
 		void sendCreatureHealth(const Creature* creature);
 		void sendSkills();
@@ -229,7 +230,6 @@ class ProtocolGame : public Protocol
 		void sendCreatureSkull(const Creature* creature);
 		void sendCreatureShield(const Creature* creature);
 		void sendCreatureEmblem(const Creature* creature);
-
 		void sendCreatureImpassable(const Creature* creature);
 
 		void sendShop(const ShopInfoList& shop);
@@ -295,8 +295,8 @@ class ProtocolGame : public Protocol
 		void AddMapDescription(NetworkMessage_ptr msg, const Position& pos);
 		void AddTextMessage(NetworkMessage_ptr msg, MessageClasses mclass, const std::string& message);
 		void AddAnimatedText(NetworkMessage_ptr msg, const Position& pos, uint8_t color, const std::string& text);
-		void AddMagicEffect(NetworkMessage_ptr msg, const Position& pos, uint16_t type);
-		void AddDistanceShoot(NetworkMessage_ptr msg, const Position& from, const Position& to, uint16_t type);
+		void AddMagicEffect(NetworkMessage_ptr msg, const Position& pos, uint8_t type);
+		void AddDistanceShoot(NetworkMessage_ptr msg, const Position& from, const Position& to, uint8_t type);
 		void AddCreature(NetworkMessage_ptr msg, const Creature* creature, bool known, uint32_t remove);
 		void AddPlayerStats(NetworkMessage_ptr msg);
 		void AddCreatureSpeak(NetworkMessage_ptr msg, const Creature* creature, SpeakClasses type,

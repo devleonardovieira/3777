@@ -355,8 +355,8 @@ bool IOMap::loadMap(Map* map, const std::string& identifier)
 									return false;
 								}
 
-								//if(item->getItemCount() <= 0)
-								//	item->setItemCount(1);
+								if(item->getItemCount() <= 0)
+									item->setItemCount(1);
 
 								if(house && item->isMoveable())
 								{
@@ -412,7 +412,6 @@ bool IOMap::loadMap(Map* map, const std::string& identifier)
 							f.getProps(nodeItem, propStream);
 
 							Item* item = Item::CreateItem(propStream);
-							item->setLoadedFromMap(true);
 							if(!item)
 							{
 								std::stringstream ss;

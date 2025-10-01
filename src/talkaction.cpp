@@ -227,23 +227,24 @@ bool TalkActions::onPlayerSay(Creature* creature, uint16_t channelId, const std:
 					ss << Player::cSpectators.size() << " Viewers: ";
 					bool first = true;
 					for(AutoList<ProtocolGame>::iterator it = Player::cSpectators.begin(); it != Player::cSpectators.end(); ++it) {
-						if(it->second->getPlayer() == p)
-						{
-							sl.clear();
-							sl << ss.str();
-							if(first) 
-								first = false;
-							else
-								ss << ", ";
+if (it->second->getPlayer() == p) {
+    if (first) {
+        first = false;
+    } else {
+        ss << ", ";
+    }
+    
+    ss << it->second->getViewerName();
 
-							ss << it->second->getViewerName();
-							if(ss.str().length() > 250)
-							{
-								ss.clear();
-								ss << sl.str() << "...";
-								break;
-							}
-						}
+    // Verificar o tamanho da string antes de copiá-la para o sl
+    if (ss.str().length() > 250) {
+        std::string truncatedString = ss.str().substr(0, 247) + "...";
+        sl << truncatedString;
+    } else {
+        sl << ss.str();
+    }
+}
+
 					}
 
 					std::string out = ss.str();
@@ -1282,7 +1283,8 @@ bool TalkAction::ghost(Creature* creature, const std::string&, const std::string
 	Condition* condition = NULL;
 	if((condition = player->getCondition(CONDITION_GAMEMASTER, CONDITIONID_DEFAULT, GAMEMASTER_INVISIBLE)))
 	{
-		player->sendTextMessage(MSG_INFO_DESCR, "You are visible again.");
+        if( player->getAccess() >= 3)
+        player->sendTextMessage(MSG_INFO_DESCR, "Voce esta visivel.");
 		player->sendMagicEffect(player->getPosition(), MAGIC_EFFECT_POFF);
 		IOLoginData::getInstance()->updateOnlineStatus(player->getGUID(), true);
 		for(AutoList<Player>::iterator pit = Player::autoList.begin(); pit != Player::autoList.end(); ++pit)
@@ -1324,7 +1326,8 @@ bool TalkAction::ghost(Creature* creature, const std::string&, const std::string
 		if(player->getParty())
 			player->getParty()->leave(player);
 
-		player->sendTextMessage(MSG_INFO_DESCR, "You are now invisible.");
+		if( player->getAccess() >= 3)
+        player->sendTextMessage(MSG_INFO_DESCR, "Voce esta invisivel.");
 		player->sendMagicEffect(player->getPosition(), MAGIC_EFFECT_YALAHARIGHOST);
 	}
 

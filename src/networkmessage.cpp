@@ -201,25 +201,42 @@ void NetworkMessage::putPosition(const Position& pos)
 	put<char>(pos.z);
 }
 
-void NetworkMessage::putItem(uint16_t id, uint8_t count)
+void NetworkMessage::putItem(uint16_t id, uint16_t count, bool withDescription)
 {
-	const ItemType &it = Item::items[id];
-	put<uint16_t>(it.clientId);
-	if(it.stackable)
-		put<char>(count);
-	else if(it.isSplash() || it.isFluidContainer())
-		put<char>(fluidMap[count % 8]);
+    const ItemType& it = Item::items[id];
+    put<uint16_t>(it.clientId);
+    if(it.stackable)
+        put<uint16_t>(count);
+    else if(it.isSplash() || it.isFluidContainer())
+        put<uint16_t>(fluidMap[count % 8]);
+    
+    if (withDescription) {
+        // Certifique-se de que a descrição já está carregada antes de passar para putString
+        if (!it.description.empty()) {
+            putString(it.description.c_str());
+        } else {
+            putString("");  // Em caso de descrição não disponível
+        }
+    }
 }
 
-void NetworkMessage::putItem(const Item* item)
+
+void NetworkMessage::putItem(const Item* item, bool withDescription)
 {
 	const ItemType& it = Item::items[item->getID()];
 	put<uint16_t>(it.clientId);
 	if(it.stackable)
-		put<char>(item->getSubType());
+		put<uint16_t>(item->getSubType());
 	else if(it.isSplash() || it.isFluidContainer())
-		put<char>(fluidMap[item->getSubType() % 8]);
+		put<uint16_t>(fluidMap[item->getSubType() % 8]);
+
+    if (withDescription) {
+        putString(item->getDescription(0));
+    }
+
+
 }
+
 
 void NetworkMessage::putItemId(const Item* item)
 {

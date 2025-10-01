@@ -530,6 +530,10 @@ bool IOMapSerialize::loadItems(Database*, DBResult* result, Cylinder* parent, bo
 		id = result->getDataInt("itemtype");
 		count = result->getDataInt("count");
 
+        if(id == 1638 || id == 1639 || id == 1640 || id == 1641)
+            continue;
+
+
 		item = NULL;
 		uint64_t attrSize = 0;
 		const char* attr = result->getDataStream("attributes", attrSize);
@@ -538,7 +542,7 @@ bool IOMapSerialize::loadItems(Database*, DBResult* result, Cylinder* parent, bo
 		propStream.init(attr, attrSize);
 
 		const ItemType& iType = Item::items[id];
-		if(iType.moveable || iType.forceSerialize || pid)
+		if(iType.forceSerialize || pid || true)
 		{
 			if(!(item = Item::CreateItem(id, count)))
 				continue;
@@ -649,7 +653,9 @@ bool IOMapSerialize::saveItems(Database* db, uint32_t& tileId, uint32_t houseId,
 	{
 		if(!(item = tile->__getThing(i)->getItem()) || (!item->isMoveable() && !item->forceSerialize()))
 			continue;
-
+        int id = item->getID();
+        if(id == 1638 || id == 1639 || id == 1640 || id == 1641)
+            continue;
 		if(!stored)
 		{
 			Position tilePosition = tile->getPosition();
@@ -749,6 +755,8 @@ bool IOMapSerialize::loadItem(PropStream& propStream, Cylinder* parent, bool dep
 	{
 		if(!(item = Item::CreateItem(id)))
 			return true;
+
+		item->setLoadedFromMap(true);
 
 		if(!item->unserializeAttr(propStream))
 		{

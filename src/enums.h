@@ -287,18 +287,11 @@ enum PlayerSex_t
 	// own use- each female should be even and male odd.
 };
 
-enum WarType_t
-{
-	WAR_FIRST = 0,
-	WAR_GUILD = WAR_FIRST,
-	WAR_ENEMY,
-	WAR_LAST = WAR_ENEMY
-};
 
 enum Stash_Actions_t : uint8_t
 {
 	STASH_ACTION_STOW_ITEM = 0,      // Guardar item individual
-	STASH_ACTION_STOW_CONTAINER = 1,  // Guardar contÃªiner
+	STASH_ACTION_STOW_CONTAINER = 1,  // Guardar contêiner
 	STASH_ACTION_STOW_STACK = 2,     // Guardar pilha de itens
 	STASH_ACTION_WITHDRAW = 3        // Retirar itens
 };
@@ -318,6 +311,15 @@ enum StashCategory_t : uint8_t
 	STASH_CATEGORY_WEAPONS_DISTANCE = 10,
 	STASH_CATEGORY_WEAPONS_MELEE = 11,
 	STASH_CATEGORY_WEAPONS_WANDS = 12
+};
+
+
+enum WarType_t
+{
+	WAR_FIRST = 0,
+	WAR_GUILD = WAR_FIRST,
+	WAR_ENEMY,
+	WAR_LAST = WAR_ENEMY
 };
 
 struct War_t
@@ -378,7 +380,8 @@ struct LightInfo
 struct ShopInfo
 {
 	uint32_t itemId;
-	int32_t subType, buyPrice, sellPrice;
+	int32_t subType;
+	uint64_t buyPrice, sellPrice;
 	std::string itemName;
 
 	ShopInfo()
@@ -388,7 +391,7 @@ struct ShopInfo
 		buyPrice = sellPrice = -1;
 		itemName = "";
 	}
-	ShopInfo(uint32_t _itemId, int32_t _subType = 1, int32_t _buyPrice = -1, int32_t _sellPrice = -1,
+	ShopInfo(uint32_t _itemId, int32_t _subType = 1, int64_t _buyPrice = -1, int64_t _sellPrice = -1,
 		const std::string& _itemName = ""): itemId(_itemId), subType(_subType), buyPrice(_buyPrice),
 		sellPrice(_sellPrice), itemName(_itemName) {}
 };

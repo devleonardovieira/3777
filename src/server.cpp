@@ -64,13 +64,10 @@ void ServicePort::open(IPAddressList ips, uint16_t port)
 	bool error = false;
 	for(IPAddressList::iterator it = ips.begin(); it != ips.end(); ++it)
 	{
-		auto IP = g_config.getBool(ConfigManager::BIND_ONLY_GLOBAL_ADDRESS) ?
-			boost::asio::ip::address(boost::asio::ip::address_v4(INADDR_ANY)) : *it;
-
 		try
 		{
 			Acceptor_ptr tmp(new boost::asio::ip::tcp::acceptor(m_io_service,
-				boost::asio::ip::tcp::endpoint(IP, m_serverPort)));
+				boost::asio::ip::tcp::endpoint(*it, m_serverPort)));
 
 			accept(tmp);
 			m_acceptors.push_back(tmp);
@@ -86,11 +83,7 @@ void ServicePort::open(IPAddressList ips, uint16_t port)
 
 			m_pendingStart = true;
 			Scheduler::getInstance().addEvent(createSchedulerTask(5000, boost::bind(
-				&ServicePort::service, boost::weak_ptr<ServicePort>(shared_from_this()), IP, m_serverPort)));
-		}
-
-		if(g_config.getBool(ConfigManager::BIND_ONLY_GLOBAL_ADDRESS)) {
-			break;
+				&ServicePort::service, boost::weak_ptr<ServicePort>(shared_from_this()), *it, m_serverPort)));
 		}
 	}
 
@@ -154,7 +147,7 @@ void ServicePort::handle(Acceptor_ptr acceptor, boost::asio::ip::tcp::socket* so
 
 		uint32_t remoteIp = 0;
 		if(!error)
-			remoteIp = htonl(ip.address().to_v4().to_uint());
+			remoteIp = htonl(ip.address().to_v4().to_ulong());
 
 		Connection_ptr connection;
 		if(remoteIp && ConnectionManager::getInstance()->acceptConnection(remoteIp) &&
@@ -249,7 +242,7 @@ void ServiceManager::stop()
 	{
 		try
 		{
-			boost::asio::post(m_io_service, boost::bind(&ServicePort::close, it->second));
+			m_io_service.post(boost::bind(&ServicePort::close, it->second));
 		}
 		catch(std::exception& e)
 		{

@@ -63,6 +63,10 @@ bool Vocations::parseVocationNode(xmlNodePtr p)
 	if(readXMLString(p, "needpremium", strValue))
 		voc->setNeedPremium(booleanString(strValue));
 
+if(readXMLString(p, "accountmanager", strValue) || readXMLString(p, "manager", strValue))
+
+	    voc->setAsManagerOption(booleanString(strValue));
+
 	if(readXMLInteger(p, "gaincap", intValue) || readXMLInteger(p, "gaincapacity", intValue))
 		voc->setGainCap(intValue);
 
@@ -463,11 +467,12 @@ void Vocation::reset()
 	memset(reflect[REFLECT_CHANCE], 0, sizeof(reflect[REFLECT_CHANCE]));
 
 	needPremium = false;
+	manager = true;
 	attackable = true;
 	lessLoss = fromVocation = 0;
 	gain[GAIN_SOUL] = 100;
 	gainTicks[GAIN_SOUL] = 120;
-	baseSpeed = 220;
+	baseSpeed = 500;
 	attackSpeed = 1500;
 	name = description = "";
 

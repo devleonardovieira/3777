@@ -237,63 +237,210 @@ void House::clean()
 	transferToDepot();
 }
 
+int32_t getConvertedHouseItemId(int32_t itemId)
+{
+    static std::map<int32_t, int32_t> houseItemTransformMap;
+    static bool loaded = false;
+
+    if (!loaded)
+    {
+        loaded = true;
+
+        xmlDocPtr doc = xmlParseFile("data/XML/housedoddads.xml");
+        if (!doc)
+        {
+            std::clog << "[Warning - getConvertedHouseItemId] Cannot load housedoddads.xml file." << std::endl;
+            return itemId;
+        }
+
+        xmlNodePtr root = xmlDocGetRootElement(doc);
+        if (!root || xmlStrcmp(root->name, (const xmlChar*)"doodads"))
+        {
+            std::clog << "[Warning - getConvertedHouseItemId] Malformed XML structure in housedoddads.xml." << std::endl;
+            xmlFreeDoc(doc);
+            return itemId;
+        }
+
+        for (xmlNodePtr node = root->children; node; node = node->next)
+        {
+            if (node->type != XML_ELEMENT_NODE || xmlStrcmp(node->name, (const xmlChar*)"item"))
+                continue;
+
+            int32_t fromid = 0, toid = 0;
+            xmlChar* prop;
+
+            prop = xmlGetProp(node, (const xmlChar*)"fromid");
+            if (prop)
+            {
+                fromid = atoi((const char*)prop);
+                xmlFree(prop);
+            }
+
+            prop = xmlGetProp(node, (const xmlChar*)"toid");
+            if (prop)
+            {
+                toid = atoi((const char*)prop);
+                xmlFree(prop);
+            }
+
+            if (fromid && toid)
+                houseItemTransformMap[fromid] = toid;
+        }
+
+        xmlFreeDoc(doc);
+    }
+
+    std::map<int32_t, int32_t>::const_iterator it = houseItemTransformMap.find(itemId);
+    if (it != houseItemTransformMap.end())
+        return it->second;
+
+    return itemId;
+}
+
+// Adicione uma função auxiliar pra checar se o item é porta da whitelist:
+bool isWhitelistedDoor(int32_t itemId)
+{
+    return itemId == 1638 || itemId == 1639 || itemId == 1640 || itemId == 1641;
+}
+
+
 bool House::transferToDepot()
 {
-	if(!townId)
-		return false;
+    if(!townId)
+        return false;
 
-	Player* player = NULL;
-	if(owner)
-	{
-		uint32_t tmp = owner;
-		if(isGuild() && !IOGuild::getInstance()->swapGuildIdToOwner(tmp))
-			tmp = 0;
+    Player* player = NULL;
+    if(owner)
+    {
+        uint32_t tmp = owner;
+        if(isGuild() && !IOGuild::getInstance()->swapGuildIdToOwner(tmp))
+            tmp = 0;
 
-		if(tmp)
-			player = g_game.getPlayerByGuidEx(tmp);
-	}
+        if(tmp)
+            player = g_game.getPlayerByGuidEx(tmp);
+    }
 
-	Item* item = NULL;
-	Container* tmpContainer = NULL;
+    Item* item = NULL;
+    Container* tmpContainer = NULL;
 
-	ItemList moveList;
-	for(HouseTileList::iterator it = houseTiles.begin(); it != houseTiles.end(); ++it)
-	{
-		for(uint32_t i = 0; i < (*it)->getThingCount(); ++i)
-		{
-			if(!(item = (*it)->__getThing(i)->getItem()))
-				continue;
+    ItemList moveList;
+    ItemList itemsToRemove;
 
-			if(item->isPickupable())
-				moveList.push_back(item);
-			else if((tmpContainer = item->getContainer()))
-			{
-				for(ItemList::const_iterator it = tmpContainer->getItems(); it != tmpContainer->getEnd(); ++it)
-					moveList.push_back(*it);
-			}
-		}
-	}
+    // 1. Iterar pelos tiles da house para preparar itens
+    for(HouseTileList::iterator it = houseTiles.begin(); it != houseTiles.end(); ++it)
+    {
+        for(uint32_t i = 0; i < (*it)->getThingCount(); ++i)
+        {
+            item = (*it)->__getThing(i)->getItem();
+            if(!item)
+                continue;
 
-	if(player)
-	{
-		Depot* depot = player->getDepot(townId, true);
-		for(ItemList::iterator it = moveList.begin(); it != moveList.end(); ++it)
-			g_game.internalMoveItem(NULL, (*it)->getParent(), depot, INDEX_WHEREEVER, (*it), (*it)->getItemCount(), NULL, FLAG_NOLIMIT);
+            // NÃO REMOVER/MOVER CHÃO
+            if(item->isGroundTile())
+                continue;
 
-		if(player->isVirtual())
-		{
-			IOLoginData::getInstance()->savePlayer(player);
-			delete player;
-		}
-	}
-	else
-	{
-		for(ItemList::iterator it = moveList.begin(); it != moveList.end(); ++it)
-			g_game.internalRemoveItem(NULL, (*it), (*it)->getItemCount(), false, FLAG_NOLIMIT);
-	}
+            uint16_t originalId = item->getID();
+            int32_t convertedId = getConvertedHouseItemId(originalId);
 
-	return true;
+            if(isWhitelistedDoor(originalId))
+                continue;
+
+            if(convertedId != originalId) 
+            {
+                tmpContainer = item->getContainer();
+                if(tmpContainer)
+                {
+                    for(ItemList::const_iterator innerIt = tmpContainer->getItems(); innerIt != tmpContainer->getEnd(); ++innerIt)
+                    {
+                        if((*innerIt)->isGroundTile())
+                            continue;
+
+                        g_game.internalRemoveItem(NULL, *innerIt, (*innerIt)->getItemCount(), false, FLAG_NOLIMIT);
+                    }
+                }
+
+                itemsToRemove.push_back(item);
+
+                Item* newItem = Item::CreateItem(convertedId, item->getItemCount());
+                if(newItem)
+                    moveList.push_back(newItem);
+            }
+            else
+            {
+                if(item->isPickupable())
+                {
+                    tmpContainer = item->getContainer();
+                    if(tmpContainer)
+                    {
+                        moveList.push_back(item);
+                    }
+                    else
+                    {
+                        moveList.push_back(item);
+                    }
+                }
+                else
+                {
+                    moveList.push_back(item);
+                }
+            }
+        }
+    }
+
+    // 2. Mover os itens para o depot, se player existir
+    if(player)
+    {
+        Depot* depot = player->getDepot(0, true);
+
+        for(ItemList::iterator it = moveList.begin(); it != moveList.end(); ++it)
+        {
+            Item* currentItem = *it;
+
+            // std::cout << "[House] Movendo item ID " << currentItem->getID() << " count " << currentItem->getItemCount() << " para depot" << std::endl;
+
+            g_game.internalMoveItem(NULL, currentItem->getParent(), depot, INDEX_WHEREEVER, currentItem, currentItem->getItemCount(), NULL, FLAG_NOLIMIT);
+        }
+
+        if(player->isVirtual())
+        {
+            IOLoginData::getInstance()->savePlayer(player);
+            delete player;
+        }
+    }
+
+    // 3. Remover os itens originais da house (do tile)
+    for(ItemList::iterator rmIt = itemsToRemove.begin(); rmIt != itemsToRemove.end(); ++rmIt)
+    {
+        Item* remItem = *rmIt;
+        Tile* tile = remItem->getTile();
+
+        if(tile)
+        {
+            tile->__removeThing(remItem, remItem->getItemCount());
+            // std::cout << "[House] Item ID " << remItem->getID() << " removido do tile." << std::endl;
+
+            // delete remItem; // Use com cuidado, só se tiver certeza que não será deletado em outro lugar
+        }
+        // else
+        // {
+        //     std::cout << "[House] Item ID " << remItem->getID() << " não tem tile associado, não foi removido do tile." << std::endl;
+        // }
+    }
+
+    // 4. Se não houver player, remover os itens da moveList diretamente
+    if(!player)
+    {
+        for(ItemList::iterator it = moveList.begin(); it != moveList.end(); ++it)
+        {
+            Item* currentItem = *it;
+            // std::cout << "[House] Removendo item ID " << currentItem->getID() << " count " << currentItem->getItemCount() << std::endl;
+            g_game.internalRemoveItem(NULL, currentItem, currentItem->getItemCount(), false, FLAG_NOLIMIT);
+        }
+    }
+
+    return true;
 }
+
 
 bool House::isInvited(const Player* player)
 {
@@ -1029,3 +1176,4 @@ uint32_t Houses::getHousesCount(uint32_t accId)
 
 	return count;
 }
+

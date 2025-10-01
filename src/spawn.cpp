@@ -141,7 +141,7 @@ bool Spawns::parseSpawnNode(xmlNodePtr p, bool checkDuplicate)
 					continue;
 				}
 
-				interval = intValue;
+				interval = 86400;
 			}
 
 			interval *= 1000;
@@ -304,8 +304,10 @@ bool Spawn::spawnMonster(uint32_t spawnId, MonsterType* mType, const Position& p
 	monster->addRef();
 	spawnedMap.insert(SpawnedPair(spawnId, monster));
 	spawnMap[spawnId].lastSpawn = OTSYS_TIME();
-	return true;
+    monster->alertSpawn();
+    return true;
 }
+ 
 
 void Spawn::startup()
 {
@@ -357,11 +359,7 @@ void Spawn::checkSpawn()
 		if(OTSYS_TIME() < sb.lastSpawn + sb.interval)
 			continue;
 
-		if(findPlayer(sb.pos))
-		{
-			sb.lastSpawn = OTSYS_TIME();
-			continue;
-		}
+ 
 
 		spawnMonster(spawnId, sb.mType, sb.pos, sb.direction);
 		++spawnCount;

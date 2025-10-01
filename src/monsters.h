@@ -98,6 +98,7 @@ class MonsterType
 		Skulls_t skull;
 		PartyShields_t partyShield;
 		GuildEmblems_t guildEmblem;
+
 		LootMessage_t lootMessage;
 
 		int32_t defense, armor, health, healthMax, baseSpeed, lookCorpse, corpseUnique, corpseAction,

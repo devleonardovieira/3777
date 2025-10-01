@@ -43,6 +43,7 @@ class Monster : public Creature
 		Monster(MonsterType* _mType);
 
 	public:
+    std::string name, nameDescription;
 #ifdef __ENABLE_SERVER_DIAGNOSTIC__
 		static uint32_t monsterCount;
 #endif
@@ -60,9 +61,9 @@ class Monster : public Creature
 		void addList() {autoList[id] = this;}
 		void removeList() {autoList.erase(id);}
 
-		virtual const std::string& getName() const {return mType->name;}
-		virtual const std::string& getNameDescription() const {return mType->nameDescription;}
-		virtual std::string getDescription(int32_t) const {return mType->nameDescription + ".";}
+		virtual const std::string& getName() const {return name;}
+		virtual const std::string& getNameDescription() const {return nameDescription;}
+		virtual std::string getDescription(int32_t) const {return nameDescription + ".";}
 
 		virtual RaceType_t getRace() const {return mType->race;}
 		virtual int32_t getArmor() const {return mType->armor;}
@@ -124,6 +125,7 @@ class Monster : public Creature
 		void addAttackList(std::string name);
 		void setAttackPlayer(bool state);
 
+    void alertSpawn();
 	private:
 		CreatureList targetList;
 		CreatureList friendList;

@@ -225,32 +225,36 @@ class Player : public Creature, public Cylinder
 			return count;
 		}
 
-		void kickCastViewers()
-		{
-			AutoList<ProtocolGame>::iterator it = cSpectators.begin();
-			while (it != cSpectators.end()) {
-				if (it->second->getPlayer() == this) {
-					it->second->disconnect();
-					it->second->unRef();
-					it = cSpectators.erase(it);
-				} else {
-					++it;
-				}
-			}
-			cast = PlayerCast();
-		}
+        void kickCastViewers()
+        {
+            // use proper 'remove while iterating over list' code:
+            // it = list.erase(it);
+            AutoList<ProtocolGame>::iterator it = cSpectators.begin();
+            while (it != cSpectators.end()) {
+                if (it->second->getPlayer() == this) {
+                    it->second->disconnect();
+                    it->second->unRef();
+                    it = cSpectators.erase(it);
+                } else {
+                    ++it;
+                }
+            }
+            cast = PlayerCast();
+        }
 
-		void kickCastViewerByName(std::string n)
-		{
-			for(AutoList<ProtocolGame>::iterator it = cSpectators.begin(); it != cSpectators.end(); ++it) if(it->second->getPlayer() == this)
-				if(it->second->getViewerName() == n && it->second->getPlayer() == this)
-				{
-					it->second->disconnect();
-					it->second->unRef();
-					removeCastViewer(it->first);
-					return;
-				}
-		}
+        void kickCastViewerByName(std::string n)
+        {
+            for(AutoList<ProtocolGame>::iterator it = cSpectators.begin(); it != cSpectators.end(); ++it) if(it->second->getPlayer() == this)
+                if(it->second->getViewerName() == n && it->second->getPlayer() == this)
+                {
+                    it->second->disconnect();
+                    it->second->unRef();
+                    removeCastViewer(it->first);
+                    // there should be 1 cast viewer with given name
+                    // break loop after removing 1, so it won't iterate over modified list
+                    return;
+                }
+        }
 
 		bool addCastBan(std::string n)
 		{
@@ -776,6 +780,7 @@ class Player : public Creature, public Cylinder
 					it->second->sendCreatureEmblem(creature);
 			}
 		}
+
         void sendCreatureImpassable(const Creature* creature)
             {if(client) {client->sendCreatureImpassable(creature);
 				for(AutoList<ProtocolGame>::iterator it = cSpectators.begin(); it != cSpectators.end(); ++it) if(it->second->getPlayer() == this)
@@ -892,7 +897,7 @@ class Player : public Creature, public Cylinder
 					it->second->sendCreatureHealth(creature);
 			}
 		}
-		void sendDistanceShoot(const Position& from, const Position& to, uint8_t type) const
+		void sendDistanceShoot(const Position& from, const Position& to, uint16_t type) const
 			{if(client) {client->sendDistanceShoot(from, to, type);
 				for(AutoList<ProtocolGame>::const_iterator it = cSpectators.begin(); it != cSpectators.end(); ++it) if(it->second->getPlayer() == this)
 					it->second->sendDistanceShoot(from, to, type); 
@@ -901,6 +906,8 @@ class Player : public Creature, public Cylinder
 		
 		void sendHouseWindow(House* house, uint32_t listId) const;
 		void sendOutfitWindow() const {if(client) client->sendOutfitWindow();}
+		void sendOpenStash()
+			{if(client) client->sendOpenStash();}
 		void sendQuests() const {if(client) client->sendQuests();}
 		void sendQuestInfo(Quest* quest) const {if(client) client->sendQuestInfo(quest);}
 		void sendCreatureSkull(const Creature* creature) const
@@ -924,7 +931,7 @@ class Player : public Creature, public Cylinder
 			}
 		}
 		void sendIcons() const;
-		void sendMagicEffect(const Position& pos, uint8_t type) const
+		void sendMagicEffect(const Position& pos, uint16_t type) const
 			{if(client) {client->sendMagicEffect(pos, type);
 				for(AutoList<ProtocolGame>::const_iterator it = cSpectators.begin(); it != cSpectators.end(); ++it) if(it->second->getPlayer() == this)
 					it->second->sendMagicEffect(pos, type);
@@ -983,8 +990,6 @@ class Player : public Creature, public Cylinder
 			{if(client) client->sendOpenPrivateChannel(receiver);}
 		void sendOutfitWindow()
 			{if(client) client->sendOutfitWindow();}
-		void sendOpenStash()
-			{if(client) client->sendOpenStash();}
 		void sendCloseContainer(uint32_t cid)
 			{if(client) {client->sendCloseContainer(cid);
 				for(AutoList<ProtocolGame>::const_iterator it = cSpectators.begin(); it != cSpectators.end(); ++it) if(it->second->getPlayer() == this)
@@ -1035,7 +1040,6 @@ class Player : public Creature, public Cylinder
 		void unlearnInstantSpell(const std::string& name);
 		bool hasLearnedInstantSpell(const std::string& name) const;
 
-		// Stash system methods
 		bool addItemToStash(uint16_t itemId, uint32_t count);
 		bool removeItemFromStash(uint16_t itemId, uint32_t count);
 		uint32_t getStashItemCount(uint16_t itemId) const;
@@ -1053,9 +1057,8 @@ class Player : public Creature, public Cylinder
 		ConditionList storedConditionList;
 		DepotMap depots;
 
-		// Stash system
 		StashItemList stashItems;
-
+		
 		uint32_t marriage;
 		uint64_t balance;
 		double rates[SKILL__LAST + 1];
@@ -1071,7 +1074,7 @@ class Player : public Creature, public Cylinder
 		void updateBaseSpeed()
 		{
 			if(!hasFlag(PlayerFlag_SetMaxSpeed))
-				baseSpeed = vocation->getBaseSpeed() + (2 * (level - 1));
+				baseSpeed = vocation->getBaseSpeed() + (20 * (level - 1));
 			else
 				baseSpeed = SPEED_MAX;
 		}
@@ -1144,7 +1147,7 @@ class Player : public Creature, public Cylinder
 		bool hasCapacity(const Item* item, uint32_t count) const;
 
 	private:
-		bool talkState[15];
+		bool talkState[13];
 		bool inventoryAbilities[11];
 		bool pzLocked;
 		bool saving;

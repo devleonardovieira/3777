@@ -424,6 +424,7 @@ class Creature : public AutoId, virtual public Thing
 		virtual PartyShields_t getPartyShield(const Creature* creature) const {return creature->getShield();}
 
 		virtual void setEmblem(GuildEmblems_t newGuildEmblem) {guildEmblem = newGuildEmblem;}
+
 		virtual GuildEmblems_t getEmblem() const {return guildEmblem;}
 		virtual GuildEmblems_t getGuildEmblem(const Creature* creature) const {return creature->getEmblem();}
 

@@ -177,7 +177,7 @@ class Game
 			width = map->mapWidth;
 			height = map->mapHeight;
 		}
-
+        void setWorldTime(bool type, Player* player);
 		void setWorldType(WorldType_t type) {worldType = type;}
 		WorldType_t getWorldType() const {return worldType;}
 
@@ -381,7 +381,7 @@ class Game
 			* meaning it's not used
 		  * \returns true if the removal was successful
 		  */
-		bool removeItemOfType(Cylinder* cylinder, uint16_t itemId, int32_t count, int32_t subType = -1, bool onlyContainers = false);
+		bool removeItemOfType(Cylinder* cylinder, uint16_t itemId, int32_t count, int32_t subType = -1, bool onlySubContainers = false);
 
 		/**
 		  * Get the amount of money in a a cylinder
@@ -453,11 +453,11 @@ class Game
 			ViolationAction_t action, std::string comment, std::string statement,
 			uint32_t statementId, bool ipBanishment);
 		bool playerMoveThing(uint32_t playerId, const Position& fromPos, uint16_t spriteId,
-			int16_t fromStackpos, const Position& toPos, uint8_t count);
+			int16_t fromStackpos, const Position& toPos, uint16_t count);
 		bool playerMoveCreature(uint32_t playerId, uint32_t movingCreatureId,
 			const Position& movingCreatureOrigPos, const Position& toPos);
 		bool playerMoveItem(uint32_t playerId, const Position& fromPos,
-			uint16_t spriteId, int16_t fromStackpos, const Position& toPos, uint8_t count);
+			uint16_t spriteId, int16_t fromStackpos, const Position& toPos, uint16_t count);
 		bool playerMove(uint32_t playerId, Direction dir);
 		bool playerCreatePrivateChannel(uint32_t playerId, ProtocolGame* pg);
 		bool playerChannelInvite(uint32_t playerId, const std::string& name);
@@ -490,11 +490,11 @@ class Game
 			uint32_t tradePlayerId, uint16_t spriteId);
 		bool playerAcceptTrade(uint32_t playerId);
 		bool playerLookInTrade(uint32_t playerId, bool lookAtCounterOffer, int index);
-		bool playerPurchaseItem(uint32_t playerId, uint16_t spriteId, uint8_t count, uint8_t amount,
+		bool playerPurchaseItem(uint32_t playerId, uint16_t spriteId, uint16_t count, uint16_t amount,
 			bool ignoreCap = false, bool inBackpacks = false);
-		bool playerSellItem(uint32_t playerId, uint16_t spriteId, uint8_t count, uint8_t amount, bool ignoreEquipped = false);
+		bool playerSellItem(uint32_t playerId, uint16_t spriteId, uint16_t count, uint16_t amount);
 		bool playerCloseShop(uint32_t playerId);
-		bool playerLookInShop(uint32_t playerId, uint16_t spriteId, uint8_t count);
+		bool playerLookInShop(uint32_t playerId, uint16_t spriteId, uint16_t count);
 		bool playerCloseTrade(uint32_t playerId);
 		bool playerSetAttackedCreature(uint32_t playerId, uint32_t creatureId);
 		bool playerFollowCreature(uint32_t playerId, uint32_t creatureId);
@@ -517,8 +517,6 @@ class Game
 		bool playerLeaveParty(uint32_t playerId, bool forced = false);
 		bool playerSharePartyExperience(uint32_t playerId, bool activate, uint8_t unknown);
 		void playerExtendedOpcode(uint32_t playerId, uint8_t opcode, const std::string& buffer);
-		
-		// Stash functions - TEMPORARILY DISABLED FOR DEBUGGING
 		bool playerStashWithdraw(uint32_t playerId, const Position& pos, uint16_t clientId, uint8_t stackpos, uint32_t count, uint8_t action);
 		bool playerStashStow(uint32_t playerId, const Position& pos, uint16_t itemId, uint8_t stackpos, uint32_t count, uint8_t action);
 
@@ -601,10 +599,10 @@ class Game
 
 		void addAnimatedText(const Position& pos, uint8_t textColor, const std::string& text);
 		void addAnimatedText(const SpectatorVec& list, const Position& pos, uint8_t textColor, const std::string& text);
-		void addMagicEffect(const Position& pos, uint8_t effect, bool ghostMode = false);
-		void addMagicEffect(const SpectatorVec& list, const Position& pos, uint8_t effect, bool ghostMode = false);
-		void addDistanceEffect(const SpectatorVec& list, const Position& fromPos, const Position& toPos, uint8_t effect);
-		void addDistanceEffect(const Position& fromPos, const Position& toPos, uint8_t effect);
+		void addMagicEffect(const Position& pos, uint16_t effect, bool ghostMode = false);
+		void addMagicEffect(const SpectatorVec& list, const Position& pos, uint16_t effect, bool ghostMode = false);
+		void addDistanceEffect(const SpectatorVec& list, const Position& fromPos, const Position& toPos, uint16_t effect);
+		void addDistanceEffect(const Position& fromPos, const Position& toPos, uint16_t effect);
 
 		const RuleViolationsMap& getRuleViolations() const {return ruleViolations;}
 		bool cancelRuleViolation(Player* player);
@@ -659,10 +657,10 @@ class Game
 		DecayList toDecayItems;
 		size_t lastBucket;
 
-		static const int32_t LIGHT_LEVEL_DAY = 250;
-		static const int32_t LIGHT_LEVEL_NIGHT = 40;
-		static const int32_t SUNSET = 1305;
-		static const int32_t SUNRISE = 430;
+		static const int32_t LIGHT_LEVEL_DAY = 0;
+		static const int32_t LIGHT_LEVEL_NIGHT = 0;
+		static const int32_t SUNSET = 0;
+		static const int32_t SUNRISE = 0;
 		int32_t lightLevel, lightHour, lightHourDelta;
 		LightState_t lightState;
 
@@ -676,7 +674,7 @@ class Game
 		int32_t lastMotdId;
 		uint32_t playersRecord;
 		uint32_t checkLightEvent, checkCreatureEvent, checkDecayEvent, saveEvent;
-		bool globalSaveMessage[3];
+		bool globalSaveMessage[2];
 
 		RefreshTiles refreshTiles;
 		Trash trash;

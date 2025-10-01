@@ -296,7 +296,7 @@ void Connection::deleteConnection()
 	assert(!m_refCount);
 	try
 	{
-		boost::asio::dispatch(m_service, boost::bind(&Connection::onStop, this));
+		m_service.dispatch(boost::bind(&Connection::onStop, this));
 	}
 	catch(std::exception& e)
 	{
@@ -320,11 +320,7 @@ void Connection::accept()
 	try
 	{
 		++m_pendingRead;
-#ifdef __USE_DEVCPP__
-		m_readTimer.expires_from_now(boost::posix_time::seconds(Connection::readTimeout));
-#else
 		m_readTimer.expires_from_now(boost::posix_time::seconds(CONNECTION_READ_TIMEOUT));
-#endif
 		m_readTimer.async_wait(boost::bind(&Connection::handleReadTimeout,
 			boost::weak_ptr<Connection>(shared_from_this()), boost::asio::placeholders::error));
 
@@ -364,11 +360,7 @@ void Connection::parseHeader(const boost::system::error_code& error)
 	try
 	{
 		++m_pendingRead;
-#ifdef __USE_DEVCPP__
-		m_readTimer.expires_from_now(boost::posix_time::seconds(Connection::readTimeout));
-#else
 		m_readTimer.expires_from_now(boost::posix_time::seconds(CONNECTION_READ_TIMEOUT));
-#endif
 		m_readTimer.async_wait(boost::bind(&Connection::handleReadTimeout,
 			boost::weak_ptr<Connection>(shared_from_this()), boost::asio::placeholders::error));
 
@@ -444,11 +436,7 @@ void Connection::parsePacket(const boost::system::error_code& error)
 	try
 	{
 		++m_pendingRead;
-#ifdef __USE_DEVCPP__
-		m_readTimer.expires_from_now(boost::posix_time::seconds(Connection::readTimeout));
-#else
 		m_readTimer.expires_from_now(boost::posix_time::seconds(CONNECTION_READ_TIMEOUT));
-#endif
 		m_readTimer.async_wait(boost::bind(&Connection::handleReadTimeout,
 			boost::weak_ptr<Connection>(shared_from_this()), boost::asio::placeholders::error));
 
@@ -516,11 +504,7 @@ void Connection::internalSend(OutputMessage_ptr msg)
 	try
 	{
 		++m_pendingWrite;
-#ifdef __USE_DEVCPP__
-		m_readTimer.expires_from_now(boost::posix_time::seconds(Connection::writeTimeout));
-#else
 		m_writeTimer.expires_from_now(boost::posix_time::seconds(CONNECTION_WRITE_TIMEOUT));
-#endif
 		m_writeTimer.async_wait(boost::bind(&Connection::handleWriteTimeout,
 			boost::weak_ptr<Connection>(shared_from_this()), boost::asio::placeholders::error));
 
@@ -544,7 +528,7 @@ uint32_t Connection::getIP() const
 	boost::system::error_code error;
 	const boost::asio::ip::tcp::endpoint ip = m_socket->remote_endpoint(error);
 	if(!error)
-		return htonl(ip.address().to_v4().to_uint());
+		return htonl(ip.address().to_v4().to_ulong());
 
 	PRINT_ASIO_ERROR("Getting remote ip");
 	return 0;

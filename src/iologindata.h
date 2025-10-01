@@ -89,7 +89,8 @@ class IOLoginData
 		bool getNameByGuid(uint32_t guid, std::string& name, bool multiworld = false);
 		bool getGuidByName(uint32_t& guid, std::string& name, bool multiworld = false);
 		bool getGuidByNameEx(uint32_t& guid, bool& specialVip, std::string& name);
-
+        std::string getPlayerLevelAndVocation(const std::string& name) const;
+         std::string getPlayerLooktype(const std::string& name) const;
 		bool changeName(uint32_t guid, std::string newName, std::string oldName);
 		bool createCharacter(uint32_t accountId, std::string characterName, int32_t vocationId, uint16_t sex, uint32_t townId);
 		DeleteCharacter_t deleteCharacter(uint32_t accountId, const std::string characterName);
@@ -106,6 +107,8 @@ class IOLoginData
 		bool updatePremiumDays();
 		bool updateOnlineStatus(uint32_t guid, bool login);
 		bool resetGuildInformation(uint32_t guid);
+		bool getSeasonRewards(uint32_t guid);
+		
 
 	protected:
 		IOLoginData() {}

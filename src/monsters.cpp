@@ -957,6 +957,7 @@ bool Monsters::loadMonster(const std::string& file, const std::string& monsterNa
 
 	if(readXMLString(root, "emblem", strValue))
 		mType->guildEmblem = getEmblems(strValue);
+	
 
 	p = root->children;
 	while(p && monsterLoad)

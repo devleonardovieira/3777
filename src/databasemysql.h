@@ -22,7 +22,7 @@
 #error "database.h should be included first."
 #endif
 
-#if defined(_MSC_VER) && _MSC_VER < 1800
+#ifdef _MSC_VER
 #include <mysql.h>
 #else
 #include <mysql/mysql.h>

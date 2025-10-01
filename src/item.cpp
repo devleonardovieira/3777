@@ -326,14 +326,16 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 	switch(attr)
 	{
 		case ATTR_COUNT:
-		{
-			uint8_t _count;
-			if(!propStream.getByte(_count))
-				return ATTR_READ_ERROR;
+        {
+            uint8_t _count;
+            if(!propStream.getByte(_count))
+                return ATTR_READ_ERROR;
 
-			setSubType((uint16_t)_count);
-			break;
-		}
+            const ItemType& it = items[id];
+            if(it.isFluidContainer() || it.isSplash() || it.charges || loadedFromMap == true)
+                setSubType((uint16_t)_count);
+            break;
+        }
 
 		case ATTR_ACTION_ID:
 		{
@@ -434,6 +436,207 @@ Attr_ReadValue Item::readAttr(AttrTypes_t attr, PropStream& propStream)
 			setAttribute("armor", armor);
 			break;
 		}
+
+		case ATTR_EXTRA1:
+		{
+			int32_t extra1;
+			if(!propStream.getLong((uint32_t&)extra1))
+				return ATTR_READ_ERROR;
+
+			setAttribute("extra1", extra1);
+			break;
+		}
+
+		case ATTR_EXTRA2:
+		{
+			int32_t extra2;
+			if(!propStream.getLong((uint32_t&)extra2))
+				return ATTR_READ_ERROR;
+
+			setAttribute("extra2", extra2);
+			break;
+		}
+
+		case ATTR_EXTRA3:
+		{
+			int32_t extra3;
+			if(!propStream.getLong((uint32_t&)extra3))
+				return ATTR_READ_ERROR;
+
+			setAttribute("extra3", extra3);
+			break;
+		}
+
+		case ATTR_EXTRA4:
+		{
+			int32_t extra4;
+			if(!propStream.getLong((uint32_t&)extra4))
+				return ATTR_READ_ERROR;
+
+			setAttribute("extra4", extra4);
+			break;
+		}
+
+		case ATTR_EXTRA5:
+		{
+			int32_t extra5;
+			if(!propStream.getLong((uint32_t&)extra5))
+				return ATTR_READ_ERROR;
+
+			setAttribute("extra5", extra5);
+			break;
+		}
+
+		case ATTR_EXTRA6:
+		{
+			int32_t extra6;
+			if(!propStream.getLong((uint32_t&)extra6))
+				return ATTR_READ_ERROR;
+
+			setAttribute("extra6", extra6);
+			break;
+		}
+
+		case ATTR_EXTRA7:
+		{
+			int32_t extra7;
+			if(!propStream.getLong((uint32_t&)extra7))
+				return ATTR_READ_ERROR;
+
+			setAttribute("extra7", extra7);
+			break;
+		}
+
+		case ATTR_EXTRA8:
+		{
+			int32_t extra8;
+			if(!propStream.getLong((uint32_t&)extra8))
+				return ATTR_READ_ERROR;
+
+			setAttribute("extra8", extra8);
+			break;
+		}
+
+		case ATTR_EXTRA9:
+		{
+			int32_t extra9;
+			if(!propStream.getLong((uint32_t&)extra9))
+				return ATTR_READ_ERROR;
+
+			setAttribute("extra9", extra9);
+			break;
+		}
+
+		case ATTR_EXTRA10:
+		{
+			int32_t extra10;
+			if(!propStream.getLong((uint32_t&)extra10))
+				return ATTR_READ_ERROR;
+
+			setAttribute("extra10", extra10);
+			break;
+		}
+
+		case ATTR_EXTRA11:
+		{
+			int32_t extra11;
+			if(!propStream.getLong((uint32_t&)extra11))
+				return ATTR_READ_ERROR;
+
+			setAttribute("extra11", extra11);
+			break;
+		}
+
+		case ATTR_EXTRA12:
+		{
+			int32_t extra12;
+			if(!propStream.getLong((uint32_t&)extra12))
+				return ATTR_READ_ERROR;
+
+			setAttribute("extra12", extra12);
+			break;
+		}
+
+		case ATTR_EXTRA13:
+		{
+			int32_t extra13;
+			if(!propStream.getLong((uint32_t&)extra13))
+				return ATTR_READ_ERROR;
+
+			setAttribute("extra13", extra13);
+			break;
+		}
+
+		case ATTR_EXTRA14:
+		{
+			int32_t extra14;
+			if(!propStream.getLong((uint32_t&)extra14))
+				return ATTR_READ_ERROR;
+
+			setAttribute("extra14", extra14);
+			break;
+		}
+
+		case ATTR_EXTRA15:
+		{
+			int32_t extra15;
+			if(!propStream.getLong((uint32_t&)extra15))
+				return ATTR_READ_ERROR;
+
+			setAttribute("extra15", extra15);
+			break;
+		}
+
+		case ATTR_EXTRA16:
+		{
+			int32_t extra16;
+			if(!propStream.getLong((uint32_t&)extra16))
+				return ATTR_READ_ERROR;
+
+			setAttribute("extra16", extra16);
+			break;
+		}
+
+		case ATTR_EXTRA17:
+		{
+			int32_t extra17;
+			if(!propStream.getLong((uint32_t&)extra17))
+				return ATTR_READ_ERROR;
+
+			setAttribute("extra17", extra17);
+			break;
+		}
+
+		case ATTR_EXTRA18:
+		{
+			int32_t extra18;
+			if(!propStream.getLong((uint32_t&)extra18))
+				return ATTR_READ_ERROR;
+
+			setAttribute("extra18", extra18);
+			break;
+		}
+
+		case ATTR_EXTRA19:
+		{
+			int32_t extra19;
+			if(!propStream.getLong((uint32_t&)extra19))
+				return ATTR_READ_ERROR;
+
+			setAttribute("extra19", extra19);
+			break;
+		}
+
+		case ATTR_EXTRA20:
+		{
+			int32_t extra20;
+			if(!propStream.getLong((uint32_t&)extra20))
+				return ATTR_READ_ERROR;
+
+			setAttribute("extra20", extra20);
+			break;
+		}
+
 
 		case ATTR_ATTACKSPEED:
 		{
@@ -892,7 +1095,7 @@ std::string Item::getDescription(const ItemType& it, int32_t lookDistance, const
 			else
 				s << ", ";
 
-			s << "magic level " << std::showpos << (int32_t)it.abilities.stats[STAT_MAGICLEVEL] << std::noshowpos;
+			s << "chakra level " << std::showpos << (int32_t)it.abilities.stats[STAT_MAGICLEVEL] << std::noshowpos;
 		}
 
 		// TODO: we should find some better way of completing this
@@ -1159,7 +1362,7 @@ std::string Item::getDescription(const ItemType& it, int32_t lookDistance, const
 			else
 				s << ", ";
 
-			s << "magic level " << std::showpos << (int32_t)it.abilities.stats[STAT_MAGICLEVEL] << std::noshowpos;
+			s << "chakra level " << std::showpos << (int32_t)it.abilities.stats[STAT_MAGICLEVEL] << std::noshowpos;
 		}
 
 		// TODO: we should find some better way of completing this

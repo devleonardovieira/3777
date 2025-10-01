@@ -163,35 +163,41 @@ void OutputMessagePool::internalReleaseMessage(OutputMessage* msg)
 
 OutputMessage_ptr OutputMessagePool::getOutputMessage(Protocol* protocol, bool autoSend/* = true*/)
 {
-	#ifdef __DEBUG_NET_DETAIL__
-	std::clog << "request output message - auto = " << autoSend << std::endl;
-	#endif
-	if(m_shutdown)
-		return OutputMessage_ptr();
+    #ifdef __DEBUG_NET_DETAIL__
+    std::clog << "request output message - auto = " << autoSend << std::endl;
+    #endif
 
-	boost::recursive_mutex::scoped_lock lockClass(m_outputPoolLock);
-	if(!protocol->getConnection())
-		return OutputMessage_ptr();
+    if(m_shutdown)
+        return OutputMessage_ptr();
 
-	if(m_outputMessages.empty())
-	{
-#ifdef __ENABLE_SERVER_DIAGNOSTIC__
-		outputMessagePoolCount++;
-#endif
-		OutputMessage* msg = new OutputMessage();
-		m_outputMessages.push_back(msg);
-#ifdef __TRACK_NETWORK__
-		m_allMessages.push_back(msg);
-#endif
-	}
+    std::cout << "[DEBUG] Thread " << pthread_self()
+              << " tentando pegar OutputMessage para player: N/A" 
+              << std::endl;
 
-	OutputMessage_ptr omsg;
-	omsg.reset(m_outputMessages.back(),
-		boost::bind(&OutputMessagePool::releaseMessage, this, boost::placeholders::_1));
+    boost::recursive_mutex::scoped_lock lock(m_outputPoolLock);
 
-	m_outputMessages.pop_back();
-	configureOutputMessage(omsg, protocol, autoSend);
-	return omsg;
+    if(!protocol->getConnection())
+        return OutputMessage_ptr();
+
+    if(m_outputMessages.empty())
+    {
+    #ifdef __ENABLE_SERVER_DIAGNOSTIC__
+        outputMessagePoolCount++;
+    #endif
+        OutputMessage* msg = new OutputMessage();
+        m_outputMessages.push_back(msg);
+    #ifdef __TRACK_NETWORK__
+        m_allMessages.push_back(msg);
+    #endif
+    }
+
+    OutputMessage_ptr omsg;
+    omsg.reset(m_outputMessages.back(),
+               boost::bind(&OutputMessagePool::releaseMessage, this, _1));
+
+    m_outputMessages.pop_back();
+    configureOutputMessage(omsg, protocol, autoSend);
+    return omsg;
 }
 
 void OutputMessagePool::configureOutputMessage(OutputMessage_ptr msg, Protocol* protocol, bool autoSend)
